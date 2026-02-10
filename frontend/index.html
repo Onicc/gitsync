@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitSync Pro - Repository Backup System</title>
+    <link rel="stylesheet" href="styles.css?v=4">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                        <path d="M16 4L4 10V22L16 28L28 22V10L16 4Z" stroke="currentColor" stroke-width="2"/>
+                        <path d="M16 16L4 10M16 16L28 10M16 16V28" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                </div>
+                <h1 class="logo-text">GitSync<span class="logo-accent">Pro</span></h1>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="#dashboard" class="nav-item active">
+                    <span class="nav-icon">▣</span>
+                    <span class="nav-label">Dashboard</span>
+                </a>
+                <a href="#backup-pairs" class="nav-item">
+                    <span class="nav-icon">⇄</span>
+                    <span class="nav-label">Backup Pairs</span>
+                </a>
+                <a href="#tasks" class="nav-item">
+                    <span class="nav-icon">⚙</span>
+                    <span class="nav-label">Task Config</span>
+                </a>
+                <a href="#credentials" class="nav-item">
+                    <span class="nav-icon">🔑</span>
+                    <span class="nav-label">Credentials</span>
+                </a>
+                <a href="#diagnostics" class="nav-item">
+                    <span class="nav-icon">⚠</span>
+                    <span class="nav-label">Diagnostics</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="system-status">
+                    <div class="status-indicator pulse"></div>
+                    <span class="status-text">System Online</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Dashboard View -->
+            <section id="dashboard" class="view-section active">
+                <header class="section-header">
+                    <div class="header-title">
+                        <h2>System Dashboard</h2>
+                        <span class="header-subtitle">Real-time backup monitoring</span>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn-secondary">
+                            <span>⟳</span> Refresh
+                        </button>
+                        <button class="btn-primary">
+                            <span>+</span> New Backup
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Status Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card success">
+                        <div class="stat-icon">✓</div>
+                        <div class="stat-content">
+                            <div class="stat-value">24</div>
+                            <div class="stat-label">Successful</div>
+                        </div>
+                        <div class="stat-trend">+3 today</div>
+                    </div>
+
+                    <div class="stat-card running">
+                        <div class="stat-icon pulse-icon">◉</div>
+                        <div class="stat-content">
+                            <div class="stat-value">2</div>
+                            <div class="stat-label">Running</div>
+                        </div>
+                        <div class="stat-trend">In progress</div>
+                    </div>
+
+                    <div class="stat-card failed">
+                        <div class="stat-icon">✕</div>
+                        <div class="stat-content">
+                            <div class="stat-value">1</div>
+                            <div class="stat-label">Failed</div>
+                        </div>
+                        <div class="stat-trend">Needs attention</div>
+                    </div>
+
+                    <div class="stat-card neutral">
+                        <div class="stat-icon">⏱</div>
+                        <div class="stat-content">
+                            <div class="stat-value">12</div>
+                            <div class="stat-label">Scheduled</div>
+                        </div>
+                        <div class="stat-trend">Next: 02:00</div>
+                    </div>
+                </div>
+
+                <!-- Real-time Activity Log -->
+                <div class="activity-section">
+                    <div class="activity-header">
+                        <h3>Live Activity Stream</h3>
+                        <div class="activity-controls">
+                            <button class="control-btn active">▶ Live</button>
+                            <button class="control-btn">⏸ Pause</button>
+                            <button class="control-btn">⎚ Clear</button>
+                        </div>
+                    </div>
+                    <div class="activity-log">
+                        <div class="log-entry running">
+                            <span class="log-time">23:04:12</span>
+                            <span class="log-status">RUN</span>
+                            <span class="log-message">Syncing repository: user/project-alpha → github.com/backup/project-alpha</span>
+                        </div>
+                        <div class="log-entry success">
+                            <span class="log-time">23:03:45</span>
+                            <span class="log-status">OK</span>
+                            <span class="log-message">Completed: lab/ai-model → gitee.com/backup/ai-model [2.3 MB transferred]</span>
+                        </div>
+                        <div class="log-entry running">
+                            <span class="log-time">23:03:12</span>
+                            <span class="log-status">RUN</span>
+                            <span class="log-message">Cloning mirror: github.com/org/backend-api</span>
+                        </div>
+                        <div class="log-entry success">
+                            <span class="log-time">23:02:33</span>
+                            <span class="log-status">OK</span>
+                            <span class="log-message">Pushed to destination: /backups/frontend-app [Fast-forward]</span>
+                        </div>
+                        <div class="log-entry info">
+                            <span class="log-time">23:01:58</span>
+                            <span class="log-status">INFO</span>
+                            <span class="log-message">Scheduled task triggered: nightly-backup-batch</span>
+                        </div>
+                        <div class="log-entry success">
+                            <span class="log-time">23:01:22</span>
+                            <span class="log-status">OK</span>
+                            <span class="log-message">Repository created via API: gitee.com/backup/new-project</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Backup Pairs View -->
+            <section id="backup-pairs" class="view-section">
+                <header class="section-header">
+                    <div class="header-title">
+                        <h2>Backup Pairs</h2>
+                        <span class="header-subtitle">Manage repository synchronization tasks</span>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn-secondary">
+                            <span>↓</span> Export Config
+                        </button>
+                        <button class="btn-primary">
+                            <span>+</span> Add Pair
+                        </button>
+                    </div>
+                </header>
+
+                <div class="table-container">
+                    <table class="backup-table">
+                        <thead>
+                            <tr>
+                                <th>Task Name</th>
+                                <th>Source</th>
+                                <th>Destination</th>
+                                <th>Last Success</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="task-name"><div class="task-icon">📦</div><span>Project-Alpha</span></td>
+                                <td class="repo-cell"><div class="repo-platform github">GitHub</div><code>user/project-alpha</code></td>
+                                <td class="repo-cell"><div class="repo-platform local">Local</div><code>/backups/alpha</code></td>
+                                <td class="timestamp">2026-02-10 23:03</td>
+                                <td><span class="status-badge success">✓ Success</span></td>
+                                <td class="actions">
+                                    <button class="action-btn" title="Sync Now">⟳</button>
+                                    <button class="action-btn" title="Pause">⏸</button>
+                                    <button class="action-btn" title="Configure">⚙</button>
+                                    <button class="action-btn danger" title="Delete">✕</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="task-name"><div class="task-icon">🤖</div><span>AI-Model</span></td>
+                                <td class="repo-cell"><div class="repo-platform gitlab">GitLab</div><code>lab/ai-model</code></td>
+                                <td class="repo-cell"><div class="repo-platform gitee">Gitee</div><code>user/ai-model</code></td>
+                                <td class="timestamp">2026-02-09 02:15</td>
+                                <td><span class="status-badge failed">✕ Failed</span></td>
+                                <td class="actions">
+                                    <button class="action-btn" title="View Logs">📋</button>
+                                    <button class="action-btn" title="Retry">↻</button>
+                                    <button class="action-btn" title="Configure">⚙</button>
+                                    <button class="action-btn danger" title="Delete">✕</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="task-name"><div class="task-icon">🌐</div><span>Frontend-App</span></td>
+                                <td class="repo-cell"><div class="repo-platform github">GitHub</div><code>org/frontend-app</code></td>
+                                <td class="repo-cell"><div class="repo-platform local">Local</div><code>/backups/frontend</code></td>
+                                <td class="timestamp">2026-02-10 22:45</td>
+                                <td><span class="status-badge running">◉ Running</span></td>
+                                <td class="actions">
+                                    <button class="action-btn" title="View Progress">👁</button>
+                                    <button class="action-btn" title="Stop">⏹</button>
+                                    <button class="action-btn" title="Configure">⚙</button>
+                                    <button class="action-btn danger" title="Delete">✕</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Task Configuration View -->
+            <section id="tasks" class="view-section">
+                <header class="section-header">
+                    <div class="header-title">
+                        <h2>Task Configuration</h2>
+                        <span class="header-subtitle">Create and manage backup schedules</span>
+                    </div>
+                </header>
+
+                <div class="config-container">
+                    <form class="config-form">
+                        <div class="form-section">
+                            <h3 class="form-section-title">Basic Information</h3>
+
+                            <div class="form-group">
+                                <label class="form-label">Task Name</label>
+                                <input type="text" class="form-input" placeholder="e.g., Project-Alpha-Backup" />
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Task Icon</label>
+                                    <input type="text" class="form-input" placeholder="📦" maxlength="2" />
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Priority</label>
+                                    <select class="form-select">
+                                        <option>Normal</option>
+                                        <option>High</option>
+                                        <option>Low</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3 class="form-section-title">Source Repository</h3>
+
+                            <div class="form-group">
+                                <label class="form-label">Platform</label>
+                                <select class="form-select">
+                                    <option>GitHub</option>
+                                    <option>GitLab</option>
+                                    <option>Gitee</option>
+                                    <option>Custom URL</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Repository Path</label>
+                                <input type="text" class="form-input" placeholder="username/repository" />
+                                <span class="form-hint">Format: owner/repo or full URL</span>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Authentication</label>
+                                <select class="form-select">
+                                    <option>SSH Key (Default)</option>
+                                    <option>Personal Access Token</option>
+                                    <option>Username/Password</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3 class="form-section-title">Destination</h3>
+
+                            <div class="form-group">
+                                <label class="form-label">Destination Type</label>
+                                <select class="form-select">
+                                    <option>Local Path</option>
+                                    <option>GitHub</option>
+                                    <option>GitLab</option>
+                                    <option>Gitee</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Destination Path</label>
+                                <input type="text" class="form-input" placeholder="/backups/project-alpha" />
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h3 class="form-section-title">Schedule Configuration</h3>
+
+                            <div class="form-group">
+                                <label class="form-label">Cron Expression</label>
+                                <input type="text" class="form-input mono" placeholder="0 2 * * *" />
+                                <span class="form-hint">Every day at 2:00 AM</span>
+                            </div>
+
+                            <div class="cron-presets">
+                                <button type="button" class="preset-btn">Every Hour</button>
+                                <button type="button" class="preset-btn">Daily 2AM</button>
+                                <button type="button" class="preset-btn">Weekly</button>
+                                <button type="button" class="preset-btn">Monthly</button>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Retry on Failure</label>
+                                <input type="number" class="form-input" value="3" min="0" max="10" />
+                                <span class="form-hint">Number of retry attempts</span>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn-secondary">Cancel</button>
+                            <button type="submit" class="btn-primary">Save Configuration</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Credentials Management View -->
+            <section id="credentials" class="view-section">
+                <header class="section-header">
+                    <div class="header-title">
+                        <h2>Credentials Management</h2>
+                        <span class="header-subtitle">Manage SSH keys and access tokens</span>
+                    </div>
+                </header>
+
+                <div class="credentials-grid">
+                    <!-- SSH Key Management -->
+                    <div class="credential-card">
+                        <div class="card-header">
+                            <h3>🔐 SSH Key Management</h3>
+                            <button class="btn-primary">Generate New Key</button>
+                        </div>
+
+                        <div class="card-content">
+                            <div class="key-info">
+                                <div class="info-row">
+                                    <span class="info-label">Key Type:</span>
+                                    <span class="info-value">ED25519</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Fingerprint:</span>
+                                    <code class="info-value">SHA256:abc123def456...</code>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Created:</span>
+                                    <span class="info-value">2026-02-10 15:30</span>
+                                </div>
+                            </div>
+
+                            <div class="key-display">
+                                <label class="form-label">Public Key</label>
+                                <div class="key-box">
+                                    <code class="key-content">ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl gitsync@backup</code>
+                                    <button class="copy-btn" title="Copy to clipboard">📋</button>
+                                </div>
+                                <span class="form-hint">Add this public key to your GitHub/GitLab/Gitee account</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Token Management -->
+                    <div class="credential-card">
+                        <div class="card-header">
+                            <h3>🎫 Access Tokens</h3>
+                            <button class="btn-primary">Add Token</button>
+                        </div>
+
+                        <div class="card-content">
+                            <div class="token-list">
+                                <div class="token-item">
+                                    <div class="token-platform github">GitHub</div>
+                                    <div class="token-details">
+                                        <div class="token-name">Personal Access Token</div>
+                                        <div class="token-scope">Scopes: repo, admin:repo_hook</div>
+                                    </div>
+                                    <div class="token-actions">
+                                        <button class="action-btn" title="Edit">✏️</button>
+                                        <button class="action-btn danger" title="Delete">✕</button>
+                                    </div>
+                                </div>
+
+                                <div class="token-item">
+                                    <div class="token-platform gitlab">GitLab</div>
+                                    <div class="token-details">
+                                        <div class="token-name">API Token</div>
+                                        <div class="token-scope">Scopes: api, read_repository</div>
+                                    </div>
+                                    <div class="token-actions">
+                                        <button class="action-btn" title="Edit">✏️</button>
+                                        <button class="action-btn danger" title="Delete">✕</button>
+                                    </div>
+                                </div>
+
+                                <div class="token-item">
+                                    <div class="token-platform gitee">Gitee</div>
+                                    <div class="token-details">
+                                        <div class="token-name">Private Token</div>
+                                        <div class="token-scope">Scopes: projects, user_info</div>
+                                    </div>
+                                    <div class="token-actions">
+                                        <button class="action-btn" title="Edit">✏️</button>
+                                        <button class="action-btn danger" title="Delete">✕</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Diagnostics View -->
+            <section id="diagnostics" class="view-section">
+                <header class="section-header">
+                    <div class="header-title">
+                        <h2>Error Diagnostics</h2>
+                        <span class="header-subtitle">Detailed error logs and troubleshooting</span>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn-secondary">
+                            <span>↓</span> Export Logs
+                        </button>
+                        <button class="btn-secondary">
+                            <span>⎚</span> Clear All
+                        </button>
+                    </div>
+                </header>
+
+                <div class="diagnostics-container">
+                    <!-- Failed Task Card -->
+                    <div class="diagnostic-card">
+                        <div class="diagnostic-header">
+                            <div class="diagnostic-title">
+                                <span class="status-badge failed">✕ Failed</span>
+                                <h3>AI-Model Backup</h3>
+                            </div>
+                            <div class="diagnostic-meta">
+                                <span class="meta-item">⏱ 2026-02-09 02:15:33</span>
+                                <span class="meta-item">⟳ Retry 3/3</span>
+                            </div>
+                        </div>
+
+                        <div class="diagnostic-body">
+                            <div class="diagnostic-info">
+                                <div class="info-item">
+                                    <span class="info-icon">📍</span>
+                                    <span class="info-text">Source: gitlab.com/lab/ai-model</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-icon">🎯</span>
+                                    <span class="info-text">Destination: gitee.com/user/ai-model</span>
+                                </div>
+                            </div>
+
+                            <div class="error-output">
+                                <div class="output-header">
+                                    <span class="output-label">Git STDERR Output</span>
+                                    <button class="copy-btn" title="Copy error">📋</button>
+                                </div>
+                                <pre class="output-content"><code>remote: HTTP Basic: Access denied
+fatal: Authentication failed for 'https://gitee.com/user/ai-model.git/'
+error: failed to push some refs to 'https://gitee.com/user/ai-model.git'
+
+Exit code: 128</code></pre>
+                            </div>
+
+                            <div class="diagnostic-actions">
+                                <button class="btn-primary">↻ Retry Now</button>
+                                <button class="btn-secondary">⚙ Edit Configuration</button>
+                                <button class="btn-secondary">🔑 Check Credentials</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Another Failed Task -->
+                    <div class="diagnostic-card">
+                        <div class="diagnostic-header">
+                            <div class="diagnostic-title">
+                                <span class="status-badge failed">✕ Failed</span>
+                                <h3>Backend-API Backup</h3>
+                            </div>
+                            <div class="diagnostic-meta">
+                                <span class="meta-item">⏱ 2026-02-08 14:22:11</span>
+                                <span class="meta-item">⟳ Retry 1/3</span>
+                            </div>
+                        </div>
+
+                        <div class="diagnostic-body">
+                            <div class="diagnostic-info">
+                                <div class="info-item">
+                                    <span class="info-icon">📍</span>
+                                    <span class="info-text">Source: github.com/org/backend-api</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-icon">🎯</span>
+                                    <span class="info-text">Destination: /backups/backend-api</span>
+                                </div>
+                            </div>
+
+                            <div class="error-output">
+                                <div class="output-header">
+                                    <span class="output-label">Git STDERR Output</span>
+                                    <button class="copy-btn" title="Copy error">📋</button>
+                                </div>
+                                <pre class="output-content"><code>fatal: destination path '/backups/backend-api' already exists and is not an empty directory.
+error: Repository not properly initialized
+
+Exit code: 128</code></pre>
+                            </div>
+
+                            <div class="diagnostic-actions">
+                                <button class="btn-primary">↻ Retry Now</button>
+                                <button class="btn-secondary">⚙ Edit Configuration</button>
+                                <button class="btn-secondary danger">🗑 Clear Destination</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
