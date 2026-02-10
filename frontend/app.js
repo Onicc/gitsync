@@ -2,6 +2,8 @@
 // GitSync Pro - Application JavaScript
 // ============================================
 
+const API_BASE = '/api';
+
 // Navigation Management
 document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
@@ -12,7 +14,130 @@ document.addEventListener('DOMContentLoaded', () => {
     initStatCards();
     initBackupPairActions();
     initActivityControls();
+    loadDashboardData();
+    loadBackupPairs();
 });
+
+// ============================================
+// API Functions
+// ============================================
+
+async function fetchAPI(endpoint, options = {}) {
+    try {
+        const response = await fetch(`${API_BASE}${endpoint}`, {
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers
+            },
+            ...options
+        });
+
+        if (!response.ok) {
+            throw new Error(`API error: ${response.statusText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('API call failed:', error);
+        throw error;
+    }
+}
+
+async function loadDashboardData() {
+    try {
+        const stats = await fetchAPI('/stats/dashboard');
+        updateDashboardStats(stats);
+    } catch (error) {
+        console.error('Failed to load dashboard data:', error);
+    }
+}
+
+function updateDashboardStats(stats) {
+    const statCards = document.querySelectorAll('.stat-card');
+    if (statCards[0]) statCards[0].querySelector('.stat-value').textContent = stats.successful;
+    if (statCards[1]) statCards[1].querySelector('.stat-value').textContent = stats.running;
+    if (statCards[2]) statCards[2].querySelector('.stat-value').textContent = stats.failed;
+    if (statCards[3]) statCards[3].querySelector('.stat-value').textContent = stats.scheduled;
+}
+
+async function loadBackupPairs() {
+    try {
+        const tasks = await fetchAPI('/tasks/');
+        renderBackupPairs(tasks);
+    } catch (error) {
+        console.error('Failed to load backup pairs:', error);
+    }
+}
+
+function renderBackupPairs(tasks) {
+    const tbody = document.querySelector('.backup-table tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = tasks.map(task => `
+        <tr data-task-id="${task.id}">
+            <td class="task-name"><div class="task-icon">${task.icon}</div><span>${task.name}</span></td>
+            <td class="repo-cell"><div class="repo-platform ${task.source_platform.toLowerCase()}">${task.source_platform}</div><code>${task.source_url}</code></td>
+            <td class="repo-cell"><div class="repo-platform ${task.dest_platform.toLowerCase()}">${task.dest_platform}</div><code>${task.dest_url}</code></td>
+            <td class="timestamp">${task.last_success ? new Date(task.last_success).toLocaleString() : 'Never'}</td>
+            <td><span class="status-badge ${task.status.toLowerCase()}">${getStatusIcon(task.status)} ${task.status}</span></td>
+            <td class="actions">
+                <button class="action-btn" onclick="syncTask(${task.id})" title="Sync Now">⟳</button>
+                <button class="action-btn" onclick="pauseTask(${task.id})" title="Pause">⏸</button>
+                <button class="action-btn" onclick="editTask(${task.id})" title="Configure">⚙</button>
+                <button class="action-btn danger" onclick="deleteTask(${task.id})" title="Delete">✕</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function getStatusIcon(status) {
+    const icons = {
+        'success': '✓',
+        'running': '◉',
+        'failed': '✕',
+        'pending': '⏱'
+    };
+    return icons[status.toLowerCase()] || '•';
+}
+
+async function syncTask(taskId) {
+    try {
+        await fetchAPI(`/tasks/${taskId}/sync`, { method: 'POST' });
+        showNotification('Sync started', 'success');
+        setTimeout(loadBackupPairs, 1000);
+    } catch (error) {
+        showNotification('Sync failed', 'error');
+    }
+}
+
+async function pauseTask(taskId) {
+    try {
+        await fetchAPI(`/tasks/${taskId}/pause`, { method: 'POST' });
+        showNotification('Task paused', 'success');
+        setTimeout(loadBackupPairs, 500);
+    } catch (error) {
+        showNotification('Failed to pause task', 'error');
+    }
+}
+
+async function deleteTask(taskId) {
+    if (!confirm('Are you sure you want to delete this task?')) return;
+
+    try {
+        await fetchAPI(`/tasks/${taskId}`, { method: 'DELETE' });
+        showNotification('Task deleted', 'success');
+        setTimeout(loadBackupPairs, 500);
+    } catch (error) {
+        showNotification('Failed to delete task', 'error');
+    }
+}
+
+function editTask(taskId) {
+    const taskNav = document.querySelector('a[href="#tasks"]');
+    if (taskNav) taskNav.click();
+    showNotification('Edit mode - Task ID: ' + taskId, 'info');
+}
+
 
 // ============================================
 // Navigation System
