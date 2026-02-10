@@ -123,36 +123,7 @@
                         </div>
                     </div>
                     <div class="activity-log">
-                        <div class="log-entry running">
-                            <span class="log-time">23:04:12</span>
-                            <span class="log-status">RUN</span>
-                            <span class="log-message">Syncing repository: user/project-alpha → github.com/backup/project-alpha</span>
-                        </div>
-                        <div class="log-entry success">
-                            <span class="log-time">23:03:45</span>
-                            <span class="log-status">OK</span>
-                            <span class="log-message">Completed: lab/ai-model → gitee.com/backup/ai-model [2.3 MB transferred]</span>
-                        </div>
-                        <div class="log-entry running">
-                            <span class="log-time">23:03:12</span>
-                            <span class="log-status">RUN</span>
-                            <span class="log-message">Cloning mirror: github.com/org/backend-api</span>
-                        </div>
-                        <div class="log-entry success">
-                            <span class="log-time">23:02:33</span>
-                            <span class="log-status">OK</span>
-                            <span class="log-message">Pushed to destination: /backups/frontend-app [Fast-forward]</span>
-                        </div>
-                        <div class="log-entry info">
-                            <span class="log-time">23:01:58</span>
-                            <span class="log-status">INFO</span>
-                            <span class="log-message">Scheduled task triggered: nightly-backup-batch</span>
-                        </div>
-                        <div class="log-entry success">
-                            <span class="log-time">23:01:22</span>
-                            <span class="log-status">OK</span>
-                            <span class="log-message">Repository created via API: gitee.com/backup/new-project</span>
-                        </div>
+                        <!-- Logs will be loaded dynamically from API -->
                     </div>
                 </div>
             </section>
@@ -187,45 +158,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td class="task-name"><div class="task-icon">📦</div><span>Project-Alpha</span></td>
-                                <td class="repo-cell"><div class="repo-platform github">GitHub</div><code>user/project-alpha</code></td>
-                                <td class="repo-cell"><div class="repo-platform local">Local</div><code>/backups/alpha</code></td>
-                                <td class="timestamp">2026-02-10 23:03</td>
-                                <td><span class="status-badge success">✓ Success</span></td>
-                                <td class="actions">
-                                    <button class="action-btn" title="Sync Now">⟳</button>
-                                    <button class="action-btn" title="Pause">⏸</button>
-                                    <button class="action-btn" title="Configure">⚙</button>
-                                    <button class="action-btn danger" title="Delete">✕</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="task-name"><div class="task-icon">🤖</div><span>AI-Model</span></td>
-                                <td class="repo-cell"><div class="repo-platform gitlab">GitLab</div><code>lab/ai-model</code></td>
-                                <td class="repo-cell"><div class="repo-platform gitee">Gitee</div><code>user/ai-model</code></td>
-                                <td class="timestamp">2026-02-09 02:15</td>
-                                <td><span class="status-badge failed">✕ Failed</span></td>
-                                <td class="actions">
-                                    <button class="action-btn" title="View Logs">📋</button>
-                                    <button class="action-btn" title="Retry">↻</button>
-                                    <button class="action-btn" title="Configure">⚙</button>
-                                    <button class="action-btn danger" title="Delete">✕</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="task-name"><div class="task-icon">🌐</div><span>Frontend-App</span></td>
-                                <td class="repo-cell"><div class="repo-platform github">GitHub</div><code>org/frontend-app</code></td>
-                                <td class="repo-cell"><div class="repo-platform local">Local</div><code>/backups/frontend</code></td>
-                                <td class="timestamp">2026-02-10 22:45</td>
-                                <td><span class="status-badge running">◉ Running</span></td>
-                                <td class="actions">
-                                    <button class="action-btn" title="View Progress">👁</button>
-                                    <button class="action-btn" title="Stop">⏹</button>
-                                    <button class="action-btn" title="Configure">⚙</button>
-                                    <button class="action-btn danger" title="Delete">✕</button>
-                                </td>
-                            </tr>
+                            <!-- Tasks will be loaded dynamically from API -->
                         </tbody>
                     </table>
                 </div>
@@ -548,6 +481,52 @@ Exit code: 128</code></pre>
                 </div>
             </section>
         </main>
+    </div>
+
+    <!-- Add Token Modal -->
+    <div id="addTokenModal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add Access Token</h2>
+                <button class="modal-close" onclick="closeAddTokenModal()">✕</button>
+            </div>
+            <form id="addTokenForm" class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Platform</label>
+                    <select id="tokenPlatform" class="form-input" required>
+                        <option value="">Select platform...</option>
+                        <option value="github">GitHub</option>
+                        <option value="gitlab">GitLab</option>
+                        <option value="gitee">Gitee</option>
+                    </select>
+                    <span class="form-hint">Choose the Git platform for this token</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Token Name</label>
+                    <input type="text" id="tokenName" class="form-input" placeholder="e.g., Production Backup Token" required>
+                    <span class="form-hint">A descriptive name to identify this token</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Token Value</label>
+                    <input type="password" id="tokenValue" class="form-input mono" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" required>
+                    <span class="form-hint">Your personal access token (will be encrypted)</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Scopes (Optional)</label>
+                    <input type="text" id="tokenScopes" class="form-input" placeholder="repo, read:org">
+                    <span class="form-hint">Comma-separated list of token permissions</span>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeAddTokenModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Add Token</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script src="app.js"></script>

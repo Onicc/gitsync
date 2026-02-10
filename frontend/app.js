@@ -14,6 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initStatCards();
     initBackupPairActions();
     initActivityControls();
+    initCredentials();
+    initDiagnostics();
     loadDashboardData();
     loadBackupPairs();
 });
@@ -202,44 +204,52 @@ function initCopyButtons() {
 }
 
 // ============================================
-// Activity Log Simulation
+// Activity Log - Real Data from API
 // ============================================
 
 function initActivityLog() {
     const activityLog = document.querySelector('.activity-log');
     if (!activityLog) return;
 
-    const logMessages = [
-        { status: 'success', message: 'Completed: user/frontend-app → /backups/frontend [1.2 MB transferred]' },
-        { status: 'running', message: 'Syncing repository: org/backend-api → github.com/backup/backend-api' },
-        { status: 'info', message: 'Scheduled task triggered: hourly-backup-batch' },
-        { status: 'success', message: 'Repository created via API: gitee.com/backup/new-project' },
-        { status: 'running', message: 'Cloning mirror: gitlab.com/lab/ml-model' }
-    ];
+    // Load initial logs
+    loadActivityLogs();
 
-    // Simulate new log entries every 5 seconds
-    let logIndex = 0;
+    // Refresh logs every 10 seconds
     setInterval(() => {
-        const log = logMessages[logIndex % logMessages.length];
-        const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+        loadActivityLogs();
+    }, 10000);
+}
 
-        const logEntry = document.createElement('div');
-        logEntry.className = `log-entry ${log.status}`;
-        logEntry.innerHTML = `
-            <span class="log-time">${time}</span>
-            <span class="log-status">${getStatusLabel(log.status)}</span>
-            <span class="log-message">${log.message}</span>
+async function loadActivityLogs() {
+    try {
+        const logs = await fetchAPI('/stats/logs?limit=20');
+        renderActivityLogs(logs);
+    } catch (error) {
+        console.error('Failed to load activity logs:', error);
+    }
+}
+
+function renderActivityLogs(logs) {
+    const activityLog = document.querySelector('.activity-log');
+    if (!activityLog) return;
+
+    if (logs.length === 0) {
+        activityLog.innerHTML = '<div class="log-entry info"><span class="log-time">--:--:--</span><span class="log-status">INFO</span><span class="log-message">No activity logs yet. Start a backup task to see logs here.</span></div>';
+        return;
+    }
+
+    activityLog.innerHTML = logs.map(log => {
+        const time = new Date(log.started_at).toLocaleTimeString('en-US', { hour12: false });
+        const status = log.status.toLowerCase();
+
+        return `
+            <div class="log-entry ${status}">
+                <span class="log-time">${time}</span>
+                <span class="log-status">${getStatusLabel(status)}</span>
+                <span class="log-message">${log.message}</span>
+            </div>
         `;
-
-        activityLog.insertBefore(logEntry, activityLog.firstChild);
-
-        // Keep only last 20 entries
-        while (activityLog.children.length > 20) {
-            activityLog.removeChild(activityLog.lastChild);
-        }
-
-        logIndex++;
-    }, 5000);
+    }).join('');
 }
 
 function getStatusLabel(status) {
@@ -502,4 +512,260 @@ function initActivityControls() {
             setTimeout(() => button.style.transform = '', 150);
         });
     });
+}
+
+// ============================================
+// Credentials Management
+// ============================================
+
+function initCredentials() {
+    // SSH Key Management
+    const generateKeyBtn = document.querySelector('#credentials .credential-card:first-child .btn-primary');
+    if (generateKeyBtn) {
+        generateKeyBtn.addEventListener('click', generateSSHKey);
+    }
+
+    // Load existing SSH key
+    loadSSHKey();
+
+    // Access Tokens Management
+    const addTokenBtn = document.querySelector('#credentials .credential-card:last-child .btn-primary');
+    if (addTokenBtn) {
+        addTokenBtn.addEventListener('click', showAddTokenDialog);
+    }
+
+    // Load existing tokens
+    loadTokens();
+}
+
+async function generateSSHKey() {
+    try {
+        showNotification('Generating SSH key...', 'info');
+        const result = await fetchAPI('/credentials/ssh/generate', { method: 'POST' });
+
+        // Update UI with new key
+        displaySSHKey(result.public_key, result.fingerprint);
+        showNotification('SSH key generated successfully', 'success');
+    } catch (error) {
+        showNotification('Failed to generate SSH key', 'error');
+        console.error('SSH key generation failed:', error);
+    }
+}
+
+async function loadSSHKey() {
+    try {
+        const result = await fetchAPI('/credentials/ssh/public-key');
+        displaySSHKey(result.public_key, 'SHA256:...');
+    } catch (error) {
+        // Key doesn't exist yet, that's okay
+        console.log('No SSH key found');
+    }
+}
+
+function displaySSHKey(publicKey, fingerprint) {
+    const keyContent = document.querySelector('.key-content');
+    const fingerprintEl = document.querySelector('.info-row:nth-child(2) .info-value');
+
+    if (keyContent) {
+        keyContent.textContent = publicKey;
+    }
+    if (fingerprintEl) {
+        fingerprintEl.textContent = fingerprint;
+    }
+}
+
+async function loadTokens() {
+    try {
+        const tokens = await fetchAPI('/credentials/tokens');
+        renderTokens(tokens);
+    } catch (error) {
+        console.error('Failed to load tokens:', error);
+    }
+}
+
+function renderTokens(tokens) {
+    const tokenList = document.querySelector('.token-list');
+    if (!tokenList) return;
+
+    if (tokens.length === 0) {
+        tokenList.innerHTML = '<div class="info-row"><span class="info-label">No tokens configured yet.</span></div>';
+        return;
+    }
+
+    tokenList.innerHTML = tokens.map(token => `
+        <div class="token-item" data-token-id="${token.id}">
+            <div class="token-platform ${token.platform.toLowerCase()}">${token.platform}</div>
+            <div class="token-details">
+                <div class="token-name">${token.name}</div>
+                <div class="token-scope">${token.scopes || 'No scopes specified'}</div>
+            </div>
+            <button class="action-btn danger" onclick="deleteToken(${token.id})" title="Delete">✕</button>
+        </div>
+    `).join('');
+}
+
+function showAddTokenDialog() {
+    const modal = document.getElementById('addTokenModal');
+    modal.classList.add('active');
+
+    // Reset form
+    document.getElementById('addTokenForm').reset();
+
+    // Focus first input
+    setTimeout(() => {
+        document.getElementById('tokenPlatform').focus();
+    }, 100);
+}
+
+function closeAddTokenModal() {
+    const modal = document.getElementById('addTokenModal');
+    modal.classList.remove('active');
+}
+
+// Handle modal form submission
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('addTokenForm');
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const platform = document.getElementById('tokenPlatform').value;
+            const name = document.getElementById('tokenName').value;
+            const value = document.getElementById('tokenValue').value;
+            const scopes = document.getElementById('tokenScopes').value;
+
+            await addToken(platform, name, value, scopes);
+            closeAddTokenModal();
+        });
+    }
+
+    // Close modal on overlay click
+    const modal = document.getElementById('addTokenModal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal || e.target.classList.contains('modal-overlay')) {
+                closeAddTokenModal();
+            }
+        });
+    }
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('addTokenModal');
+            if (modal && modal.classList.contains('active')) {
+                closeAddTokenModal();
+            }
+        }
+    });
+});
+
+async function addToken(platform, name, value, scopes) {
+    try {
+        await fetchAPI('/credentials/tokens', {
+            method: 'POST',
+            body: JSON.stringify({
+                platform: platform,
+                credential_type: 'token',
+                name: name,
+                value: value,
+                scopes: scopes
+            })
+        });
+
+        showNotification('Token added successfully', 'success');
+        loadTokens();
+    } catch (error) {
+        showNotification('Failed to add token', 'error');
+        console.error('Token creation failed:', error);
+    }
+}
+
+async function deleteToken(tokenId) {
+    if (!confirm('Are you sure you want to delete this token?')) return;
+
+    try {
+        await fetchAPI(`/credentials/tokens/${tokenId}`, { method: 'DELETE' });
+        showNotification('Token deleted successfully', 'success');
+        loadTokens();
+    } catch (error) {
+        showNotification('Failed to delete token', 'error');
+        console.error('Token deletion failed:', error);
+    }
+}
+
+// ============================================
+// Diagnostics Management
+// ============================================
+
+function initDiagnostics() {
+    loadFailedTasks();
+}
+
+async function loadFailedTasks() {
+    try {
+        const failedTasks = await fetchAPI('/stats/failed-tasks');
+        renderFailedTasks(failedTasks);
+    } catch (error) {
+        console.error('Failed to load diagnostics:', error);
+    }
+}
+
+function renderFailedTasks(tasks) {
+    const container = document.querySelector('.diagnostics-container');
+    if (!container) return;
+
+    if (tasks.length === 0) {
+        container.innerHTML = '<div class="diagnostic-card"><div class="diagnostic-header"><div class="diagnostic-title">No failed tasks found</div></div></div>';
+        return;
+    }
+
+    container.innerHTML = tasks.map(task => `
+        <div class="diagnostic-card">
+            <div class="diagnostic-header">
+                <div class="diagnostic-title">
+                    <span class="status-badge failed">✕ Failed</span>
+                    <h3>${task.task_name}</h3>
+                </div>
+                <span class="diagnostic-time">${new Date(task.failed_at).toLocaleString()}</span>
+            </div>
+            <div class="diagnostic-body">
+                <div class="diagnostic-info">
+                    <div class="info-row">
+                        <span class="info-label">Source:</span>
+                        <code>${task.source_url}</code>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Destination:</span>
+                        <code>${task.dest_url}</code>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Error:</span>
+                        <span>${task.error_message}</span>
+                    </div>
+                </div>
+                <div class="error-output">
+                    <div class="output-header">
+                        <span>Git Error Output (stderr)</span>
+                        <button class="copy-btn" onclick="copyErrorOutput(this)" title="Copy">📋</button>
+                    </div>
+                    <pre class="output-content">${task.error_output || 'No error output available'}</pre>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function copyErrorOutput(button) {
+    const outputContent = button.closest('.error-output').querySelector('.output-content');
+    if (outputContent) {
+        navigator.clipboard.writeText(outputContent.textContent).then(() => {
+            button.textContent = '✓';
+            button.style.background = 'var(--status-success)';
+            setTimeout(() => {
+                button.textContent = '📋';
+                button.style.background = '';
+            }, 2000);
+        });
+    }
 }

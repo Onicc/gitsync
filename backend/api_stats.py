@@ -58,3 +58,27 @@ def get_recent_logs(limit: int = 20, db: Session = Depends(get_db)):
         TaskLog.started_at.desc()
     ).limit(limit).all()
     return logs
+
+@router.get("/failed-tasks")
+def get_failed_tasks(db: Session = Depends(get_db)):
+    """Get failed tasks with error details"""
+    failed_logs = db.query(TaskLog).filter(
+        TaskLog.status == TaskStatus.FAILED,
+        TaskLog.error_output.isnot(None)
+    ).order_by(TaskLog.started_at.desc()).limit(10).all()
+
+    result = []
+    for log in failed_logs:
+        task = db.query(BackupTask).filter(BackupTask.id == log.task_id).first()
+        if task:
+            result.append({
+                "task_id": task.id,
+                "task_name": task.name,
+                "source_url": task.source_url,
+                "dest_url": task.dest_url,
+                "error_message": log.message,
+                "error_output": log.error_output,
+                "failed_at": log.started_at.isoformat()
+            })
+
+    return result

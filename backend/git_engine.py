@@ -31,12 +31,12 @@ class GitSyncEngine:
         temp_path = self.work_dir / f"{task_name}_{os.getpid()}"
 
         try:
-            # Step 1: Clone source as mirror
+            # Step 1: Clone source as mirror with submodules
             logger.info(f"Cloning mirror from {source_url}")
             source_with_auth = self._inject_auth(source_url, auth_token)
 
             result = subprocess.run(
-                ["git", "clone", "--mirror", source_with_auth, str(temp_path)],
+                ["git", "clone", "--mirror", "--recurse-submodules", source_with_auth, str(temp_path)],
                 capture_output=True,
                 text=True,
                 timeout=600

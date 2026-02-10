@@ -7,6 +7,7 @@ import logging
 from database import init_db
 from api_tasks import router as tasks_router
 from api_stats import router as stats_router
+from api_credentials import router as credentials_router
 from scheduler import TaskScheduler
 
 # Configure logging
@@ -47,6 +48,7 @@ app.add_middleware(
 # Include routers
 app.include_router(tasks_router)
 app.include_router(stats_router)
+app.include_router(credentials_router)
 
 @app.get("/api/health")
 def health_check():

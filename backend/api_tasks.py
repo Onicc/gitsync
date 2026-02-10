@@ -1,12 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
 from database import get_db
 from models import BackupTask, TaskStatus, PlatformType, TaskLog
+from git_engine import GitSyncEngine
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
+
+# Git sync engine instance
+git_engine = GitSyncEngine()
 
 # Pydantic schemas
 class TaskCreate(BaseModel):
@@ -106,14 +110,68 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
     return {"message": "Task deleted successfully"}
 
 @router.post("/{task_id}/sync")
-def trigger_sync(task_id: int, db: Session = Depends(get_db)):
+def trigger_sync(task_id: int, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """Manually trigger a sync for a task"""
     task = db.query(BackupTask).filter(BackupTask.id == task_id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    # This will be handled by the scheduler
-    return {"message": "Sync triggered", "task_id": task_id}
+    # Execute sync in background
+    background_tasks.add_task(execute_sync_task, task_id)
+    return {"message": "Sync started", "task_id": task_id}
+
+def execute_sync_task(task_id: int):
+    """Execute sync task in background"""
+    from database import SessionLocal
+    db = SessionLocal()
+    try:
+        task = db.query(BackupTask).filter(BackupTask.id == task_id).first()
+        if not task:
+            return
+
+        # Update status to running
+        task.status = TaskStatus.RUNNING
+        task.last_run = datetime.utcnow()
+        db.commit()
+
+        # Create log entry
+        log = TaskLog(
+            task_id=task.id,
+            status=TaskStatus.RUNNING,
+            message=f"Manual sync: {task.source_url} → {task.dest_url}",
+            started_at=datetime.utcnow()
+        )
+        db.add(log)
+        db.commit()
+
+        # Execute sync
+        success, message = git_engine.sync_repository(
+            source_url=task.source_url,
+            dest_url=task.dest_url,
+            task_name=task.name
+        )
+
+        # Update status
+        if success:
+            task.status = TaskStatus.SUCCESS
+            task.last_success = datetime.utcnow()
+            log.status = TaskStatus.SUCCESS
+            log.message = message
+        else:
+            task.status = TaskStatus.FAILED
+            log.status = TaskStatus.FAILED
+            log.message = "Sync failed"
+            log.error_output = message
+
+        log.completed_at = datetime.utcnow()
+        db.commit()
+
+    except Exception as e:
+        if task:
+            task.status = TaskStatus.FAILED
+            db.commit()
+    finally:
+        db.close()
 
 @router.post("/{task_id}/pause")
 def pause_task(task_id: int, db: Session = Depends(get_db)):
