@@ -160,34 +160,51 @@ class GitSyncEngine:
                 capture_output=True
             )
 
-            # Step 2: Set push URL to destination
-            logger.info(f"Setting push URL to {dest_url}")
-            dest_with_auth = self._inject_auth(dest_url, dest_token)
+            # Check if destination is local path or remote URL
+            is_local = not (dest_url.startswith("http") or dest_url.startswith("git@"))
 
-            result = subprocess.run(
-                ["git", "remote", "set-url", "--push", "origin", dest_with_auth],
-                cwd=temp_path,
-                capture_output=True,
-                text=True
-            )
+            if is_local:
+                # Step 2: For local destination, move mirror to destination path
+                logger.info(f"Moving mirror to local destination: {dest_url}")
+                dest_path = Path(dest_url)
 
-            if result.returncode != 0:
-                return False, f"Set URL failed: {result.stderr}"
+                # Remove destination if it exists
+                if dest_path.exists():
+                    shutil.rmtree(dest_path, ignore_errors=True)
 
-            # Step 3: Push mirror to destination
-            logger.info(f"Pushing mirror to destination")
-            result = subprocess.run(
-                ["git", "push", "--mirror"],
-                cwd=temp_path,
-                capture_output=True,
-                text=True,
-                timeout=600
-            )
+                # Move temp mirror to destination
+                shutil.move(str(temp_path), str(dest_path))
 
-            if result.returncode != 0:
-                return False, f"Push failed: {result.stderr}"
+                return True, f"Successfully synced {source_url} to {dest_url}"
+            else:
+                # Step 2: For remote destination, set push URL
+                logger.info(f"Setting push URL to {dest_url}")
+                dest_with_auth = self._inject_auth(dest_url, dest_token)
 
-            return True, f"Successfully synced {source_url} to {dest_url}"
+                result = subprocess.run(
+                    ["git", "remote", "set-url", "--push", "origin", dest_with_auth],
+                    cwd=temp_path,
+                    capture_output=True,
+                    text=True
+                )
+
+                if result.returncode != 0:
+                    return False, f"Set URL failed: {result.stderr}"
+
+                # Step 3: Push mirror to destination
+                logger.info(f"Pushing mirror to destination")
+                result = subprocess.run(
+                    ["git", "push", "--mirror"],
+                    cwd=temp_path,
+                    capture_output=True,
+                    text=True,
+                    timeout=600
+                )
+
+                if result.returncode != 0:
+                    return False, f"Push failed: {result.stderr}"
+
+                return True, f"Successfully synced {source_url} to {dest_url}"
 
         except subprocess.TimeoutExpired:
             return False, "Operation timed out"
