@@ -32,10 +32,6 @@
                     <span class="nav-icon">⇄</span>
                     <span class="nav-label">Backup Pairs</span>
                 </a>
-                <a href="#tasks" class="nav-item">
-                    <span class="nav-icon">⚙</span>
-                    <span class="nav-label">Task Config</span>
-                </a>
                 <a href="#credentials" class="nav-item">
                     <span class="nav-icon">🔑</span>
                     <span class="nav-label">Credentials</span>
@@ -139,7 +135,7 @@
                         <button class="btn-secondary">
                             <span>↓</span> Export Config
                         </button>
-                        <button class="btn-primary">
+                        <button class="btn-primary" onclick="showAddBackupPairModal()">
                             <span>+</span> Add Pair
                         </button>
                     </div>
@@ -161,119 +157,6 @@
                             <!-- Tasks will be loaded dynamically from API -->
                         </tbody>
                     </table>
-                </div>
-            </section>
-
-            <!-- Task Configuration View -->
-            <section id="tasks" class="view-section">
-                <header class="section-header">
-                    <div class="header-title">
-                        <h2>Task Configuration</h2>
-                        <span class="header-subtitle">Create and manage backup schedules</span>
-                    </div>
-                </header>
-
-                <div class="config-container">
-                    <form class="config-form">
-                        <div class="form-section">
-                            <h3 class="form-section-title">Basic Information</h3>
-
-                            <div class="form-group">
-                                <label class="form-label">Task Name</label>
-                                <input type="text" class="form-input" placeholder="e.g., Project-Alpha-Backup" />
-                            </div>
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">Task Icon</label>
-                                    <input type="text" class="form-input" placeholder="📦" maxlength="2" />
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Priority</label>
-                                    <select class="form-select">
-                                        <option>Normal</option>
-                                        <option>High</option>
-                                        <option>Low</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-section">
-                            <h3 class="form-section-title">Source Repository</h3>
-
-                            <div class="form-group">
-                                <label class="form-label">Platform</label>
-                                <select class="form-select">
-                                    <option>GitHub</option>
-                                    <option>GitLab</option>
-                                    <option>Gitee</option>
-                                    <option>Custom URL</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label">Repository Path</label>
-                                <input type="text" class="form-input" placeholder="username/repository" />
-                                <span class="form-hint">Format: owner/repo or full URL</span>
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label">Authentication</label>
-                                <select class="form-select">
-                                    <option>SSH Key (Default)</option>
-                                    <option>Personal Access Token</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="form-section">
-                            <h3 class="form-section-title">Destination</h3>
-
-                            <div class="form-group">
-                                <label class="form-label">Destination Type</label>
-                                <select class="form-select">
-                                    <option>Local Path</option>
-                                    <option>GitHub</option>
-                                    <option>GitLab</option>
-                                    <option>Gitee</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label">Destination Path</label>
-                                <input type="text" class="form-input" placeholder="/backups/project-alpha" />
-                            </div>
-                        </div>
-
-                        <div class="form-section">
-                            <h3 class="form-section-title">Schedule Configuration</h3>
-
-                            <div class="form-group">
-                                <label class="form-label">Cron Expression</label>
-                                <input type="text" class="form-input mono" placeholder="0 2 * * *" />
-                                <span class="form-hint">Every day at 2:00 AM</span>
-                            </div>
-
-                            <div class="cron-presets">
-                                <button type="button" class="preset-btn">Every Hour</button>
-                                <button type="button" class="preset-btn">Daily 2AM</button>
-                                <button type="button" class="preset-btn">Weekly</button>
-                                <button type="button" class="preset-btn">Monthly</button>
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label">Retry on Failure</label>
-                                <input type="number" class="form-input" value="3" min="0" max="10" />
-                                <span class="form-hint">Number of retry attempts</span>
-                            </div>
-                        </div>
-
-                        <div class="form-actions">
-                            <button type="button" class="btn-secondary">Cancel</button>
-                            <button type="submit" class="btn-primary">Save Configuration</button>
-                        </div>
-                    </form>
                 </div>
             </section>
 
@@ -480,6 +363,126 @@ Exit code: 128</code></pre>
                 </div>
             </section>
         </main>
+    </div>
+
+    <!-- Add Backup Pair Modal -->
+    <div id="addBackupPairModal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2 class="modal-title">Add Backup Pair</h2>
+                <button class="modal-close" onclick="closeAddBackupPairModal()">✕</button>
+            </div>
+            <form id="addBackupPairForm" class="modal-body">
+                <!-- Basic Information -->
+                <div class="form-section-compact">
+                    <h3 class="form-section-title">Basic Information</h3>
+
+                    <div class="form-group">
+                        <label class="form-label">Task Name</label>
+                        <input type="text" id="taskName" class="form-input" placeholder="e.g., Project-Alpha-Backup" required>
+                        <span class="form-hint">A unique name to identify this backup task</span>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Task Icon</label>
+                            <input type="text" id="taskIcon" class="form-input" placeholder="📦" maxlength="2" value="📦">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Priority</label>
+                            <select id="taskPriority" class="form-input">
+                                <option>Normal</option>
+                                <option>High</option>
+                                <option>Low</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Source Repository -->
+                <div class="form-section-compact">
+                    <h3 class="form-section-title">Source Repository</h3>
+
+                    <div class="form-group">
+                        <label class="form-label">Platform</label>
+                        <select id="sourcePlatform" class="form-input" required>
+                            <option value="">Select platform...</option>
+                            <option value="github">GitHub</option>
+                            <option value="gitlab">GitLab</option>
+                            <option value="gitee">Gitee</option>
+                            <option value="custom">Custom URL</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Repository URL</label>
+                        <input type="text" id="sourceUrl" class="form-input mono" placeholder="https://github.com/username/repository.git" required>
+                        <span class="form-hint">Full repository URL or username/repository format</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Authentication</label>
+                        <select id="sourceAuth" class="form-input">
+                            <option value="ssh">SSH Key (Default)</option>
+                            <option value="token">Personal Access Token</option>
+                        </select>
+                        <span class="form-hint">SSH key is global; Token will be auto-matched by user ID</span>
+                    </div>
+                </div>
+
+                <!-- Destination -->
+                <div class="form-section-compact">
+                    <h3 class="form-section-title">Destination</h3>
+
+                    <div class="form-group">
+                        <label class="form-label">Destination Type</label>
+                        <select id="destPlatform" class="form-input" required>
+                            <option value="">Select destination...</option>
+                            <option value="local">Local Path</option>
+                            <option value="github">GitHub</option>
+                            <option value="gitlab">GitLab</option>
+                            <option value="gitee">Gitee</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Destination Path</label>
+                        <input type="text" id="destUrl" class="form-input mono" placeholder="/backups/project-alpha or https://..." required>
+                        <span class="form-hint">Local path or full repository URL</span>
+                    </div>
+                </div>
+
+                <!-- Schedule Configuration -->
+                <div class="form-section-compact">
+                    <h3 class="form-section-title">Schedule Configuration</h3>
+
+                    <div class="form-group">
+                        <label class="form-label">Cron Expression</label>
+                        <input type="text" id="cronExpression" class="form-input mono" placeholder="0 2 * * *" required>
+                        <span class="form-hint">Every day at 2:00 AM</span>
+                    </div>
+
+                    <div class="cron-presets">
+                        <button type="button" class="preset-btn" onclick="setCronPreset('0 * * * *', 'Every Hour')">Every Hour</button>
+                        <button type="button" class="preset-btn" onclick="setCronPreset('0 2 * * *', 'Daily 2AM')">Daily 2AM</button>
+                        <button type="button" class="preset-btn" onclick="setCronPreset('0 2 * * 0', 'Weekly')">Weekly</button>
+                        <button type="button" class="preset-btn" onclick="setCronPreset('0 2 1 * *', 'Monthly')">Monthly</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Retry on Failure</label>
+                        <input type="number" id="retryCount" class="form-input" value="3" min="0" max="10">
+                        <span class="form-hint">Number of retry attempts</span>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeAddBackupPairModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Backup Pair</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Add Token Modal -->

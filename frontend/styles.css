@@ -785,6 +785,17 @@ body {
     border-bottom: 1px solid var(--border-color);
 }
 
+.form-section-compact {
+    margin-bottom: var(--spacing-lg);
+    padding-bottom: var(--spacing-lg);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.form-section-compact:last-of-type {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
 .form-section:last-of-type {
     border-bottom: none;
 }
@@ -1283,6 +1294,15 @@ body {
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
     animation: modalSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-large {
+    max-width: 720px;
+}
+
+.modal-large .modal-body {
+    max-height: calc(90vh - 140px);
+    overflow-y: auto;
 }
 
 .modal-header {

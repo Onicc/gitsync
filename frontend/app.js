@@ -134,6 +134,20 @@ async function deleteTask(taskId) {
     }
 }
 
+async function createBackupTask(taskData) {
+    try {
+        await fetchAPI('/tasks/', {
+            method: 'POST',
+            body: JSON.stringify(taskData)
+        });
+        showNotification('Backup pair created successfully', 'success');
+        setTimeout(loadBackupPairs, 500);
+    } catch (error) {
+        showNotification('Failed to create backup pair', 'error');
+        console.error('Task creation failed:', error);
+    }
+}
+
 function editTask(taskId) {
     const taskNav = document.querySelector('a[href="#tasks"]');
     if (taskNav) taskNav.click();
@@ -623,6 +637,44 @@ function closeAddTokenModal() {
     modal.classList.remove('active');
 }
 
+// ============================================
+// Add Backup Pair Modal Functions
+// ============================================
+
+function showAddBackupPairModal() {
+    const modal = document.getElementById('addBackupPairModal');
+    modal.classList.add('active');
+
+    // Reset form
+    document.getElementById('addBackupPairForm').reset();
+
+    // Focus first input
+    setTimeout(() => {
+        document.getElementById('taskName').focus();
+    }, 100);
+}
+
+function closeAddBackupPairModal() {
+    const modal = document.getElementById('addBackupPairModal');
+    modal.classList.remove('active');
+}
+
+function setCronPreset(expression, description) {
+    const cronInput = document.getElementById('cronExpression');
+    const hint = cronInput.nextElementSibling;
+
+    cronInput.value = expression;
+    if (hint && hint.classList.contains('form-hint')) {
+        const descriptions = {
+            'Every Hour': 'Runs at the start of every hour',
+            'Daily 2AM': 'Runs every day at 2:00 AM',
+            'Weekly': 'Runs every Sunday at 2:00 AM',
+            'Monthly': 'Runs on the 1st of every month at 2:00 AM'
+        };
+        hint.textContent = descriptions[description] || description;
+    }
+}
+
 // Handle modal form submission
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('addTokenForm');
@@ -641,6 +693,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Handle Add Backup Pair form submission
+    const backupPairForm = document.getElementById('addBackupPairForm');
+    if (backupPairForm) {
+        backupPairForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const taskData = {
+                name: document.getElementById('taskName').value,
+                icon: document.getElementById('taskIcon').value,
+                source_platform: document.getElementById('sourcePlatform').value,
+                source_url: document.getElementById('sourceUrl').value,
+                dest_platform: document.getElementById('destPlatform').value,
+                dest_url: document.getElementById('destUrl').value,
+                cron_expression: document.getElementById('cronExpression').value,
+                retry_count: parseInt(document.getElementById('retryCount').value)
+            };
+
+            await createBackupTask(taskData);
+            closeAddBackupPairModal();
+        });
+    }
+
     // Close modal on overlay click
     const modal = document.getElementById('addTokenModal');
     if (modal) {
@@ -654,12 +728,30 @@ document.addEventListener('DOMContentLoaded', () => {
     // Close modal on Escape key
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            const modal = document.getElementById('addTokenModal');
-            if (modal && modal.classList.contains('active')) {
+            const tokenModal = document.getElementById('addTokenModal');
+            if (tokenModal && tokenModal.classList.contains('active')) {
                 closeAddTokenModal();
+            }
+            const backupPairModal = document.getElementById('addBackupPairModal');
+            if (backupPairModal && backupPairModal.classList.contains('active')) {
+                closeAddBackupPairModal();
+            }
+            const deleteModal = document.getElementById('deleteConfirmModal');
+            if (deleteModal && deleteModal.classList.contains('active')) {
+                closeDeleteConfirmModal();
             }
         }
     });
+
+    // Close Backup Pair modal on overlay click
+    const backupPairModal = document.getElementById('addBackupPairModal');
+    if (backupPairModal) {
+        backupPairModal.addEventListener('click', (e) => {
+            if (e.target === backupPairModal || e.target.classList.contains('modal-overlay')) {
+                closeAddBackupPairModal();
+            }
+        });
+    }
 });
 
 async function addToken(platform, name, userId, value, scopes) {
