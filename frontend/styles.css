@@ -1363,3 +1363,79 @@ body {
         transform: translateY(0) scale(1);
     }
 }
+
+/* Confirmation Modal Styles */
+.modal-confirm {
+    max-width: 440px;
+}
+
+.modal-header-danger {
+    background: linear-gradient(135deg, rgba(220, 38, 38, 0.1), rgba(185, 28, 28, 0.05));
+    border-bottom-color: rgba(220, 38, 38, 0.3);
+}
+
+.modal-icon-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: rgba(220, 38, 38, 0.2);
+    border: 2px solid var(--status-failed);
+    border-radius: 50%;
+    font-size: 18px;
+    margin-right: var(--spacing-sm);
+    animation: dangerPulse 2s ease-in-out infinite;
+}
+
+.confirm-message {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin: 0 0 var(--spacing-md) 0;
+}
+
+.confirm-warning {
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0 0 var(--spacing-lg) 0;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(220, 38, 38, 0.1);
+    border-left: 3px solid var(--status-failed);
+    border-radius: 4px;
+}
+
+.btn-danger {
+    background: var(--status-failed);
+    color: white;
+    border: 1px solid var(--status-failed);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-danger:hover {
+    background: #b91c1c;
+    border-color: #b91c1c;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+.btn-danger:active {
+    transform: translateY(0);
+}
+
+@keyframes dangerPulse {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(220, 38, 38, 0);
+    }
+}

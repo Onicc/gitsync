@@ -681,13 +681,29 @@ async function addToken(platform, name, value, scopes) {
     }
 }
 
-async function deleteToken(tokenId) {
-    if (!confirm('Are you sure you want to delete this token?')) return;
+// Store token ID for deletion confirmation
+let tokenToDelete = null;
+
+function deleteToken(tokenId) {
+    tokenToDelete = tokenId;
+    const modal = document.getElementById('deleteConfirmModal');
+    modal.classList.add('active');
+}
+
+function closeDeleteConfirmModal() {
+    const modal = document.getElementById('deleteConfirmModal');
+    modal.classList.remove('active');
+    tokenToDelete = null;
+}
+
+async function confirmDeleteToken() {
+    if (!tokenToDelete) return;
 
     try {
-        await fetchAPI(`/credentials/tokens/${tokenId}`, { method: 'DELETE' });
+        await fetchAPI(`/credentials/tokens/${tokenToDelete}`, { method: 'DELETE' });
         showNotification('Token deleted successfully', 'success');
         loadTokens();
+        closeDeleteConfirmModal();
     } catch (error) {
         showNotification('Failed to delete token', 'error');
         console.error('Token deletion failed:', error);

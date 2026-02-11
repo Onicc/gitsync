@@ -529,6 +529,26 @@ Exit code: 128</code></pre>
         </div>
     </div>
 
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteConfirmModal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-confirm">
+            <div class="modal-header modal-header-danger">
+                <div class="modal-icon-danger">⚠</div>
+                <h2 class="modal-title">Delete Access Token</h2>
+                <button class="modal-close" onclick="closeDeleteConfirmModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p class="confirm-message">Are you sure you want to delete this token?</p>
+                <p class="confirm-warning">This action cannot be undone. Any services using this token will lose access.</p>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeDeleteConfirmModal()">Cancel</button>
+                    <button type="button" class="btn-danger" onclick="confirmDeleteToken()">Delete Token</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>
