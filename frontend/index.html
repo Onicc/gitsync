@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GitSync Pro - Repository Backup System</title>
-    <link rel="stylesheet" href="styles.css?v=5">
+    <link rel="stylesheet" href="styles.css?v=7">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -132,7 +132,7 @@
                         <span class="header-subtitle">Manage repository synchronization tasks</span>
                     </div>
                     <div class="header-actions">
-                        <button class="btn-secondary">
+                        <button class="btn-secondary" onclick="exportBackupConfig()">
                             <span>↓</span> Export Config
                         </button>
                         <button class="btn-primary" onclick="showAddBackupPairModal()">
@@ -262,10 +262,10 @@
                         <span class="header-subtitle">Detailed error logs and troubleshooting</span>
                     </div>
                     <div class="header-actions">
-                        <button class="btn-secondary">
+                        <button class="btn-secondary" onclick="exportLogs()">
                             <span>↓</span> Export Logs
                         </button>
-                        <button class="btn-secondary">
+                        <button class="btn-secondary" onclick="clearAllLogs()">
                             <span>⎚</span> Clear All
                         </button>
                     </div>
@@ -363,6 +363,128 @@ Exit code: 128</code></pre>
                 </div>
             </section>
         </main>
+    </div>
+
+    <!-- Edit Backup Pair Modal -->
+    <div id="editBackupPairModal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2 class="modal-title">Edit Backup Pair</h2>
+                <button class="modal-close" onclick="closeEditBackupPairModal()">✕</button>
+            </div>
+            <form id="editBackupPairForm" class="modal-body">
+                <input type="hidden" id="editTaskId">
+
+                <!-- Basic Information -->
+                <div class="form-section-compact">
+                    <h3 class="form-section-title">Basic Information</h3>
+
+                    <div class="form-group">
+                        <label class="form-label">Task Name</label>
+                        <input type="text" id="editTaskName" class="form-input" placeholder="e.g., Project-Alpha-Backup" required>
+                        <span class="form-hint">A unique name to identify this backup task</span>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Task Icon</label>
+                            <input type="text" id="editTaskIcon" class="form-input" placeholder="📦" maxlength="2" value="📦">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Priority</label>
+                            <select id="editTaskPriority" class="form-input">
+                                <option>Normal</option>
+                                <option>High</option>
+                                <option>Low</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Source Repository -->
+                <div class="form-section-compact">
+                    <h3 class="form-section-title">Source Repository</h3>
+
+                    <div class="form-group">
+                        <label class="form-label">Platform</label>
+                        <select id="editSourcePlatform" class="form-input" required>
+                            <option value="">Select platform...</option>
+                            <option value="github">GitHub</option>
+                            <option value="gitlab">GitLab</option>
+                            <option value="gitee">Gitee</option>
+                            <option value="custom">Custom URL</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Repository URL</label>
+                        <input type="text" id="editSourceUrl" class="form-input mono" placeholder="https://github.com/username/repository.git" required>
+                        <span class="form-hint">Full repository URL or username/repository format</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Authentication</label>
+                        <select id="editSourceAuth" class="form-input">
+                            <option value="ssh">SSH Key (Default)</option>
+                            <option value="token">Personal Access Token</option>
+                        </select>
+                        <span class="form-hint">SSH key is global; Token will be auto-matched by user ID</span>
+                    </div>
+                </div>
+
+                <!-- Destination -->
+                <div class="form-section-compact">
+                    <h3 class="form-section-title">Destination</h3>
+
+                    <div class="form-group">
+                        <label class="form-label">Destination Type</label>
+                        <select id="editDestPlatform" class="form-input" required>
+                            <option value="">Select destination...</option>
+                            <option value="local">Local Path</option>
+                            <option value="github">GitHub</option>
+                            <option value="gitlab">GitLab</option>
+                            <option value="gitee">Gitee</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Destination Path</label>
+                        <input type="text" id="editDestUrl" class="form-input mono" placeholder="/backups/project-alpha or https://..." required>
+                        <span class="form-hint">Local path or full repository URL</span>
+                    </div>
+                </div>
+
+                <!-- Schedule Configuration -->
+                <div class="form-section-compact">
+                    <h3 class="form-section-title">Schedule Configuration</h3>
+
+                    <div class="form-group">
+                        <label class="form-label">Cron Expression</label>
+                        <input type="text" id="editCronExpression" class="form-input mono" placeholder="0 2 * * *" required>
+                        <span class="form-hint">Every day at 2:00 AM</span>
+                    </div>
+
+                    <div class="cron-presets">
+                        <button type="button" class="preset-btn" onclick="setEditCronPreset('0 * * * *', 'Every Hour')">Every Hour</button>
+                        <button type="button" class="preset-btn" onclick="setEditCronPreset('0 2 * * *', 'Daily 2AM')">Daily 2AM</button>
+                        <button type="button" class="preset-btn" onclick="setEditCronPreset('0 2 * * 0', 'Weekly')">Weekly</button>
+                        <button type="button" class="preset-btn" onclick="setEditCronPreset('0 2 1 * *', 'Monthly')">Monthly</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Retry on Failure</label>
+                        <input type="number" id="editRetryCount" class="form-input" value="3" min="0" max="10">
+                        <span class="form-hint">Number of retry attempts</span>
+                    </div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeEditBackupPairModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Update Backup Pair</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Add Backup Pair Modal -->
@@ -534,6 +656,26 @@ Exit code: 128</code></pre>
                     <button type="submit" class="btn-primary">Add Token</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Delete Backup Pair Confirmation Modal -->
+    <div id="deleteBackupPairModal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-confirm">
+            <div class="modal-header modal-header-danger">
+                <div class="modal-icon-danger">⚠</div>
+                <h2 class="modal-title">Delete Backup Pair</h2>
+                <button class="modal-close" onclick="closeDeleteBackupPairModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p class="confirm-message">Are you sure you want to delete this backup pair?</p>
+                <p class="confirm-warning">This action cannot be undone. The scheduled backup task will be permanently removed.</p>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeDeleteBackupPairModal()">Cancel</button>
+                    <button type="button" class="btn-danger" onclick="confirmDeleteBackupPair()">Delete Backup Pair</button>
+                </div>
+            </div>
         </div>
     </div>
 

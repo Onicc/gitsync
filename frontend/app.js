@@ -106,10 +106,45 @@ async function syncTask(taskId) {
     try {
         await fetchAPI(`/tasks/${taskId}/sync`, { method: 'POST' });
         showNotification('Sync started', 'success');
-        setTimeout(loadBackupPairs, 1000);
+
+        // Start polling for status updates
+        startStatusPolling(taskId);
     } catch (error) {
         showNotification('Sync failed', 'error');
     }
+}
+
+// Poll for status updates after sync
+let statusPollingInterval = null;
+function startStatusPolling(taskId) {
+    // Clear any existing polling
+    if (statusPollingInterval) {
+        clearInterval(statusPollingInterval);
+    }
+
+    // Poll every 2 seconds
+    statusPollingInterval = setInterval(async () => {
+        await loadBackupPairs();
+        await loadDashboardData();
+        await loadActivityLogs();
+
+        // Check if task is still running
+        try {
+            const task = await fetchAPI(`/tasks/${taskId}`);
+            if (task.status !== 'running') {
+                clearInterval(statusPollingInterval);
+                statusPollingInterval = null;
+
+                // Reload diagnostics if failed
+                if (task.status === 'failed') {
+                    await loadFailedTasks();
+                }
+            }
+        } catch (error) {
+            clearInterval(statusPollingInterval);
+            statusPollingInterval = null;
+        }
+    }, 2000);
 }
 
 async function pauseTask(taskId) {
@@ -123,11 +158,27 @@ async function pauseTask(taskId) {
 }
 
 async function deleteTask(taskId) {
-    if (!confirm('Are you sure you want to delete this task?')) return;
+    // Store task ID for confirmation
+    window.taskToDelete = taskId;
+
+    // Show custom confirmation modal
+    const modal = document.getElementById('deleteBackupPairModal');
+    modal.classList.add('active');
+}
+
+function closeDeleteBackupPairModal() {
+    const modal = document.getElementById('deleteBackupPairModal');
+    modal.classList.remove('active');
+    window.taskToDelete = null;
+}
+
+async function confirmDeleteBackupPair() {
+    if (!window.taskToDelete) return;
 
     try {
-        await fetchAPI(`/tasks/${taskId}`, { method: 'DELETE' });
+        await fetchAPI(`/tasks/${window.taskToDelete}`, { method: 'DELETE' });
         showNotification('Task deleted', 'success');
+        closeDeleteBackupPairModal();
         setTimeout(loadBackupPairs, 500);
     } catch (error) {
         showNotification('Failed to delete task', 'error');
@@ -148,12 +199,124 @@ async function createBackupTask(taskData) {
     }
 }
 
-function editTask(taskId) {
-    const taskNav = document.querySelector('a[href="#tasks"]');
-    if (taskNav) taskNav.click();
-    showNotification('Edit mode - Task ID: ' + taskId, 'info');
+async function updateBackupTask(taskId, taskData) {
+    try {
+        await fetchAPI(`/tasks/${taskId}`, {
+            method: 'PUT',
+            body: JSON.stringify(taskData)
+        });
+        showNotification('Backup pair updated successfully', 'success');
+        setTimeout(loadBackupPairs, 500);
+    } catch (error) {
+        showNotification('Failed to update backup pair', 'error');
+        console.error('Task update failed:', error);
+    }
 }
 
+function editTask(taskId) {
+    // Load task data and show edit modal
+    loadTaskForEdit(taskId);
+}
+
+async function loadTaskForEdit(taskId) {
+    try {
+        const task = await fetchAPI(`/tasks/${taskId}`);
+
+        // Populate form fields
+        document.getElementById('editTaskId').value = task.id;
+        document.getElementById('editTaskName').value = task.name;
+        document.getElementById('editTaskIcon').value = task.icon;
+        document.getElementById('editSourcePlatform').value = task.source_platform.toLowerCase();
+        document.getElementById('editSourceUrl').value = task.source_url;
+        document.getElementById('editDestPlatform').value = task.dest_platform.toLowerCase();
+        document.getElementById('editDestUrl').value = task.dest_url;
+        document.getElementById('editCronExpression').value = task.cron_expression;
+        document.getElementById('editRetryCount').value = task.retry_count;
+
+        // Show modal
+        const modal = document.getElementById('editBackupPairModal');
+        modal.classList.add('active');
+
+        // Focus first input
+        setTimeout(() => {
+            document.getElementById('editTaskName').focus();
+        }, 100);
+    } catch (error) {
+        showNotification('Failed to load task data', 'error');
+        console.error('Load task error:', error);
+    }
+}
+
+
+// ============================================
+// Export and Clear Functions
+// ============================================
+
+async function exportBackupConfig() {
+    try {
+        const tasks = await fetchAPI('/tasks/');
+        const config = {
+            version: '1.0',
+            exported_at: new Date().toISOString(),
+            backup_pairs: tasks
+        };
+
+        const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `backup-config-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showNotification('Configuration exported successfully', 'success');
+    } catch (error) {
+        showNotification('Failed to export configuration', 'error');
+        console.error('Export failed:', error);
+    }
+}
+
+async function exportLogs() {
+    try {
+        const logs = await fetchAPI('/stats/logs?limit=1000');
+        const logText = logs.map(log => {
+            const time = new Date(log.started_at).toISOString();
+            return `[${time}] [${log.status.toUpperCase()}] ${log.message}`;
+        }).join('\n');
+
+        const blob = new Blob([logText], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `activity-logs-${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showNotification('Logs exported successfully', 'success');
+    } catch (error) {
+        showNotification('Failed to export logs', 'error');
+        console.error('Export logs failed:', error);
+    }
+}
+
+async function clearAllLogs() {
+    if (!confirm('Are you sure you want to clear all diagnostic logs? This action cannot be undone.')) {
+        return;
+    }
+
+    try {
+        await fetchAPI('/stats/logs', { method: 'DELETE' });
+        showNotification('All logs cleared successfully', 'success');
+        await loadFailedTasks();
+    } catch (error) {
+        showNotification('Failed to clear logs', 'error');
+        console.error('Clear logs failed:', error);
+    }
+}
 
 // ============================================
 // Navigation System
@@ -659,8 +822,29 @@ function closeAddBackupPairModal() {
     modal.classList.remove('active');
 }
 
+function closeEditBackupPairModal() {
+    const modal = document.getElementById('editBackupPairModal');
+    modal.classList.remove('active');
+}
+
 function setCronPreset(expression, description) {
     const cronInput = document.getElementById('cronExpression');
+    const hint = cronInput.nextElementSibling;
+
+    cronInput.value = expression;
+    if (hint && hint.classList.contains('form-hint')) {
+        const descriptions = {
+            'Every Hour': 'Runs at the start of every hour',
+            'Daily 2AM': 'Runs every day at 2:00 AM',
+            'Weekly': 'Runs every Sunday at 2:00 AM',
+            'Monthly': 'Runs on the 1st of every month at 2:00 AM'
+        };
+        hint.textContent = descriptions[description] || description;
+    }
+}
+
+function setEditCronPreset(expression, description) {
+    const cronInput = document.getElementById('editCronExpression');
     const hint = cronInput.nextElementSibling;
 
     cronInput.value = expression;
@@ -715,6 +899,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Handle Edit Backup Pair form submission
+    const editBackupPairForm = document.getElementById('editBackupPairForm');
+    if (editBackupPairForm) {
+        editBackupPairForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const taskId = document.getElementById('editTaskId').value;
+            const taskData = {
+                name: document.getElementById('editTaskName').value,
+                icon: document.getElementById('editTaskIcon').value,
+                source_platform: document.getElementById('editSourcePlatform').value,
+                source_url: document.getElementById('editSourceUrl').value,
+                dest_platform: document.getElementById('editDestPlatform').value,
+                dest_url: document.getElementById('editDestUrl').value,
+                cron_expression: document.getElementById('editCronExpression').value,
+                retry_count: parseInt(document.getElementById('editRetryCount').value)
+            };
+
+            await updateBackupTask(taskId, taskData);
+            closeEditBackupPairModal();
+        });
+    }
+
     // Close modal on overlay click
     const modal = document.getElementById('addTokenModal');
     if (modal) {
@@ -736,6 +943,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (backupPairModal && backupPairModal.classList.contains('active')) {
                 closeAddBackupPairModal();
             }
+            const editBackupPairModal = document.getElementById('editBackupPairModal');
+            if (editBackupPairModal && editBackupPairModal.classList.contains('active')) {
+                closeEditBackupPairModal();
+            }
+            const deleteBackupPairModal = document.getElementById('deleteBackupPairModal');
+            if (deleteBackupPairModal && deleteBackupPairModal.classList.contains('active')) {
+                closeDeleteBackupPairModal();
+            }
             const deleteModal = document.getElementById('deleteConfirmModal');
             if (deleteModal && deleteModal.classList.contains('active')) {
                 closeDeleteConfirmModal();
@@ -749,6 +964,26 @@ document.addEventListener('DOMContentLoaded', () => {
         backupPairModal.addEventListener('click', (e) => {
             if (e.target === backupPairModal || e.target.classList.contains('modal-overlay')) {
                 closeAddBackupPairModal();
+            }
+        });
+    }
+
+    // Close Edit Backup Pair modal on overlay click
+    const editBackupPairModal = document.getElementById('editBackupPairModal');
+    if (editBackupPairModal) {
+        editBackupPairModal.addEventListener('click', (e) => {
+            if (e.target === editBackupPairModal || e.target.classList.contains('modal-overlay')) {
+                closeEditBackupPairModal();
+            }
+        });
+    }
+
+    // Close Delete Backup Pair modal on overlay click
+    const deleteBackupPairModal = document.getElementById('deleteBackupPairModal');
+    if (deleteBackupPairModal) {
+        deleteBackupPairModal.addEventListener('click', (e) => {
+            if (e.target === deleteBackupPairModal || e.target.classList.contains('modal-overlay')) {
+                closeDeleteBackupPairModal();
             }
         });
     }
@@ -811,6 +1046,11 @@ async function confirmDeleteToken() {
 
 function initDiagnostics() {
     loadFailedTasks();
+
+    // Refresh diagnostics every 15 seconds
+    setInterval(() => {
+        loadFailedTasks();
+    }, 15000);
 }
 
 async function loadFailedTasks() {

@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List
+from datetime import datetime
 from database import get_db
 from models import BackupTask, TaskStatus, TaskLog
 from pydantic import BaseModel
@@ -51,13 +52,20 @@ class LogEntry(BaseModel):
     class Config:
         from_attributes = True
 
-@router.get("/logs", response_model=List[LogEntry])
+@router.get("/logs")
 def get_recent_logs(limit: int = 20, db: Session = Depends(get_db)):
     """Get recent activity logs"""
     logs = db.query(TaskLog).order_by(
         TaskLog.started_at.desc()
     ).limit(limit).all()
-    return logs
+
+    return [{
+        "id": log.id,
+        "task_id": log.task_id,
+        "status": log.status.value,
+        "message": log.message,
+        "started_at": log.started_at.isoformat()
+    } for log in logs]
 
 @router.get("/failed-tasks")
 def get_failed_tasks(db: Session = Depends(get_db)):
@@ -82,3 +90,10 @@ def get_failed_tasks(db: Session = Depends(get_db)):
             })
 
     return result
+
+@router.delete("/logs")
+def clear_all_logs(db: Session = Depends(get_db)):
+    """Clear all activity logs"""
+    db.query(TaskLog).delete()
+    db.commit()
+    return {"message": "All logs cleared successfully"}
