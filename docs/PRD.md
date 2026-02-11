@@ -21,7 +21,7 @@
     * 创建 Token 时需输入**用户 ID**（GitHub username、GitLab username 等）。
     * 执行 Git 操作时，系统自动解析仓库 URL 中的用户/组织 ID，匹配对应的 Token。
 
-* **凭据存储:** 数据库中加密存储 Token 和密码。
+* **凭据存储:** 数据库中加密存储 Token。
 
 * **凭据匹配逻辑:**
     * **使用 Token 时:** 从仓库 URL 提取用户 ID（如 `github.com/user123/repo` 中的 `user123`），匹配数据库中对应平台和用户 ID 的 Token。
