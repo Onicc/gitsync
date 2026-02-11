@@ -801,48 +801,149 @@ function initActivityControls() {
 // ============================================
 
 function initCredentials() {
-    // Load existing SSH key
-    loadSSHKey();
+    // Load existing SSH keys
+    loadSSHKeys();
 
     // Load existing tokens
     loadTokens();
 }
 
-async function generateSSHKey() {
+// ============================================
+// SSH Key Management - Multiple Keys Support
+// ============================================
+
+function showAddSSHKeyDialog() {
+    const modal = document.getElementById('addSSHKeyModal');
+    modal.classList.add('active');
+
+    // Reset form
+    document.getElementById('addSSHKeyForm').reset();
+
+    // Focus first input
+    setTimeout(() => {
+        document.getElementById('sshKeyPlatform').focus();
+    }, 100);
+}
+
+function closeAddSSHKeyModal() {
+    const modal = document.getElementById('addSSHKeyModal');
+    modal.classList.remove('active');
+    document.getElementById('addSSHKeyForm').reset();
+}
+
+async function loadSSHKeys() {
+    try {
+        const keys = await fetchAPI('/credentials/ssh-keys');
+        renderSSHKeys(keys);
+    } catch (error) {
+        console.error('Failed to load SSH keys:', error);
+    }
+}
+
+function renderSSHKeys(keys) {
+    const keyList = document.querySelector('.ssh-key-list');
+    if (!keyList) return;
+
+    if (keys.length === 0) {
+        keyList.innerHTML = '<div class="info-row"><span class="info-label">No SSH keys configured yet.</span></div>';
+        return;
+    }
+
+    keyList.innerHTML = keys.map(key => `
+        <div class="token-item" data-key-id="${key.id}">
+            <div class="token-platform ${key.platform.toLowerCase()}">${key.platform}</div>
+            <div class="token-details">
+                <div class="token-name">${key.name || 'SSH Key'}</div>
+                ${key.user_id ? `<div class="token-user-id">@${key.user_id}</div>` : ''}
+                <div class="token-scope">${key.fingerprint || 'No fingerprint'}</div>
+            </div>
+            <div class="token-actions">
+                <button class="action-btn" onclick="viewSSHKeyPublicKey(${key.id})" title="View Public Key">👁️</button>
+                <button class="action-btn danger" onclick="deleteSSHKey(${key.id})" title="Delete">✕</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function viewSSHKeyPublicKey(keyId) {
+    try {
+        const result = await fetchAPI(`/credentials/ssh-keys/${keyId}/public-key`);
+
+        // Show public key in a modal or alert
+        const message = `Public Key:\n\n${result.public_key}\n\nFingerprint: ${result.fingerprint}\n\nAdd this public key to your Git platform account.`;
+
+        // Copy to clipboard
+        await navigator.clipboard.writeText(result.public_key);
+        showNotification('Public key copied to clipboard', 'success');
+
+        // Also show in alert for viewing
+        alert(message);
+    } catch (error) {
+        showNotification('Failed to load public key', 'error');
+        console.error('Load public key error:', error);
+    }
+}
+
+let sshKeyToDelete = null;
+
+function deleteSSHKey(keyId) {
+    sshKeyToDelete = keyId;
+    const modal = document.getElementById('deleteConfirmModal');
+
+    // Update modal text for SSH key
+    const message = modal.querySelector('.confirm-message');
+    const warning = modal.querySelector('.confirm-warning');
+    if (message) message.textContent = 'Are you sure you want to delete this SSH key?';
+    if (warning) warning.textContent = 'This action cannot be undone. Any services using this SSH key will lose access.';
+
+    modal.classList.add('active');
+}
+
+async function confirmDeleteSSHKey() {
+    if (!sshKeyToDelete) return;
+
+    try {
+        await fetchAPI(`/credentials/ssh-keys/${sshKeyToDelete}`, { method: 'DELETE' });
+        showNotification('SSH key deleted successfully', 'success');
+        loadSSHKeys();
+        closeDeleteConfirmModal();
+        sshKeyToDelete = null;
+    } catch (error) {
+        showNotification('Failed to delete SSH key', 'error');
+        console.error('SSH key deletion failed:', error);
+    }
+}
+
+async function generateSSHKeyForUser(platform, userId, name) {
     try {
         showNotification('Generating SSH key...', 'info');
-        const result = await fetchAPI('/credentials/ssh/generate', { method: 'POST' });
+        const result = await fetchAPI('/credentials/ssh-keys', {
+            method: 'POST',
+            body: JSON.stringify({
+                platform: platform,
+                user_id: userId,
+                name: name || `${platform} - ${userId}`
+            })
+        });
 
-        // Update UI with new key
-        displaySSHKey(result.public_key, result.fingerprint);
         showNotification('SSH key generated successfully', 'success');
+        loadSSHKeys();
+
+        // Show public key to user
+        const message = `SSH Key Generated!\n\nPublic Key:\n${result.public_key}\n\nFingerprint: ${result.fingerprint}\n\nThe public key has been copied to your clipboard.\nAdd it to your ${platform} account (@${userId}).`;
+
+        // Copy to clipboard
+        await navigator.clipboard.writeText(result.public_key);
+        alert(message);
     } catch (error) {
         showNotification('Failed to generate SSH key', 'error');
         console.error('SSH key generation failed:', error);
     }
 }
 
-async function loadSSHKey() {
-    try {
-        const result = await fetchAPI('/credentials/ssh/public-key');
-        displaySSHKey(result.public_key, 'SHA256:...');
-    } catch (error) {
-        // Key doesn't exist yet, that's okay
-        console.log('No SSH key found');
-    }
-}
-
-function displaySSHKey(publicKey, fingerprint) {
-    const keyContent = document.querySelector('.key-content');
-    const fingerprintEl = document.querySelector('.info-row:nth-child(2) .info-value');
-
-    if (keyContent) {
-        keyContent.textContent = publicKey;
-    }
-    if (fingerprintEl) {
-        fingerprintEl.textContent = fingerprint;
-    }
-}
+// ============================================
+// Access Token Management
+// ============================================
 
 async function loadTokens() {
     try {
@@ -981,6 +1082,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 await addToken(platform, name, userId, value, scopes);
             }
             closeAddTokenModal();
+        });
+    }
+
+    // Handle Add SSH Key form submission
+    const sshKeyForm = document.getElementById('addSSHKeyForm');
+    if (sshKeyForm) {
+        sshKeyForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const platform = document.getElementById('sshKeyPlatform').value;
+            const userId = document.getElementById('sshKeyUserId').value;
+            const name = document.getElementById('sshKeyName').value;
+
+            await generateSSHKeyForUser(platform, userId, name);
+            closeAddSSHKeyModal();
         });
     }
 
@@ -1241,9 +1357,16 @@ function closeDeleteConfirmModal() {
     const modal = document.getElementById('deleteConfirmModal');
     modal.classList.remove('active');
     tokenToDelete = null;
+    sshKeyToDelete = null;
 }
 
 async function confirmDeleteToken() {
+    // Handle both SSH key and token deletion
+    if (sshKeyToDelete) {
+        await confirmDeleteSSHKey();
+        return;
+    }
+
     if (!tokenToDelete) return;
 
     try {

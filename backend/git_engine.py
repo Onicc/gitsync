@@ -147,6 +147,19 @@ class GitSyncEngine:
             if result.returncode != 0:
                 return False, f"Clone failed: {result.stderr}"
 
+            # Step 1.5: Configure git user info for this repository
+            logger.info("Configuring git user info")
+            subprocess.run(
+                ["git", "config", "--local", "user.name", "gitsync"],
+                cwd=temp_path,
+                capture_output=True
+            )
+            subprocess.run(
+                ["git", "config", "--local", "user.email", "admin@gitsync.com"],
+                cwd=temp_path,
+                capture_output=True
+            )
+
             # Step 2: Set push URL to destination
             logger.info(f"Setting push URL to {dest_url}")
             dest_with_auth = self._inject_auth(dest_url, dest_token)
@@ -187,14 +200,42 @@ class GitSyncEngine:
                 shutil.rmtree(temp_path, ignore_errors=True)
 
     def _inject_auth(self, url: str, token: Optional[str]) -> str:
-        """Inject authentication token into URL"""
-        if not token or not url.startswith("http"):
+        """
+        Inject authentication into URL
+        - For HTTPS URLs: inject token
+        - For SSH URLs: replace with SSH config host alias
+        """
+        # Handle HTTPS URLs with token
+        if url.startswith("http") and token:
+            if "://" in url:
+                protocol, rest = url.split("://", 1)
+                return f"{protocol}://{token}@{rest}"
             return url
 
-        # Insert token after https://
-        if "://" in url:
-            protocol, rest = url.split("://", 1)
-            return f"{protocol}://{token}@{rest}"
+        # Handle SSH URLs - replace with SSH config host alias
+        if url.startswith("git@"):
+            # Extract platform and user from SSH URL
+            # Format: git@github.com:username/repo.git
+            ssh_match = re.match(r'git@([^:]+):([^/]+)/', url)
+            if ssh_match:
+                hostname = ssh_match.group(1)
+                username = ssh_match.group(2)
+
+                # Determine platform from hostname
+                platform = None
+                if 'github.com' in hostname:
+                    platform = 'github'
+                elif 'gitlab.com' in hostname:
+                    platform = 'gitlab'
+                elif 'gitee.com' in hostname:
+                    platform = 'gitee'
+
+                if platform:
+                    # Replace with SSH config host alias
+                    # git@github.com:username/repo.git -> git@github-username:username/repo.git
+                    host_alias = f"{platform}-{username}"
+                    return url.replace(f"git@{hostname}:", f"git@{host_alias}:")
+
         return url
 
     def check_repository_exists(
