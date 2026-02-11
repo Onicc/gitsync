@@ -13,10 +13,19 @@
 * **SSH 管理:**
     * 支持在 Web 端一键生成 SSH Key 对（RSA 或 ED25519）。
     * 提供公钥复制功能，用户可手动将其添加至各平台。
+    * SSH Key 为全局凭据，可用于所有平台和账户。
 
+* **Token 管理:**
+    * 集中存储各平台的 Personal Access Tokens (PAT)。
+    * **多账户支持:** 同一平台可存储多个账户的 Token（如管理两个 GitHub 账户）。
+    * 创建 Token 时需输入**用户 ID**（GitHub username、GitLab username 等）。
+    * 执行 Git 操作时，系统自动解析仓库 URL 中的用户/组织 ID，匹配对应的 Token。
 
-* **Token 管理:** 集中存储各平台的 Personal Access Tokens (PAT)。
 * **凭据存储:** 数据库中加密存储 Token 和密码。
+
+* **凭据匹配逻辑:**
+    * **使用 Token 时:** 从仓库 URL 提取用户 ID（如 `github.com/user123/repo` 中的 `user123`），匹配数据库中对应平台和用户 ID 的 Token。
+    * **使用 SSH 时:** 直接使用全局 SSH Key，无需匹配用户 ID。
 
 ### 1.3 任务调度与管理
 

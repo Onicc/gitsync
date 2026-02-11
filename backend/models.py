@@ -67,6 +67,7 @@ class Credential(Base):
     platform = Column(Enum(PlatformType), nullable=False)
     credential_type = Column(String(50), nullable=False)  # ssh, token, password
     name = Column(String(255), nullable=False)
+    user_id = Column(String(255), nullable=True, index=True)  # GitHub/GitLab/Gitee username
     encrypted_value = Column(Text, nullable=False)
     scopes = Column(String(500), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

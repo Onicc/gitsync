@@ -86,11 +86,12 @@ class TaskScheduler:
             db.add(log)
             db.commit()
 
-            # Execute sync
+            # Execute sync with automatic credential lookup
             success, message = self.git_engine.sync_repository(
                 source_url=task.source_url,
                 dest_url=task.dest_url,
-                task_name=task.name
+                task_name=task.name,
+                db=db
             )
 
             # Update task status

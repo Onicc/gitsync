@@ -144,11 +144,12 @@ def execute_sync_task(task_id: int):
         db.add(log)
         db.commit()
 
-        # Execute sync
+        # Execute sync with automatic credential lookup
         success, message = git_engine.sync_repository(
             source_url=task.source_url,
             dest_url=task.dest_url,
-            task_name=task.name
+            task_name=task.name,
+            db=db
         )
 
         # Update status

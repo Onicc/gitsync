@@ -597,6 +597,7 @@ function renderTokens(tokens) {
             <div class="token-platform ${token.platform.toLowerCase()}">${token.platform}</div>
             <div class="token-details">
                 <div class="token-name">${token.name}</div>
+                ${token.user_id ? `<div class="token-user-id">@${token.user_id}</div>` : ''}
                 <div class="token-scope">${token.scopes || 'No scopes specified'}</div>
             </div>
             <button class="action-btn danger" onclick="deleteToken(${token.id})" title="Delete">✕</button>
@@ -631,10 +632,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const platform = document.getElementById('tokenPlatform').value;
             const name = document.getElementById('tokenName').value;
+            const userId = document.getElementById('tokenUserId').value;
             const value = document.getElementById('tokenValue').value;
             const scopes = document.getElementById('tokenScopes').value;
 
-            await addToken(platform, name, value, scopes);
+            await addToken(platform, name, userId, value, scopes);
             closeAddTokenModal();
         });
     }
@@ -660,7 +662,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-async function addToken(platform, name, value, scopes) {
+async function addToken(platform, name, userId, value, scopes) {
     try {
         await fetchAPI('/credentials/tokens', {
             method: 'POST',
@@ -668,6 +670,7 @@ async function addToken(platform, name, value, scopes) {
                 platform: platform,
                 credential_type: 'token',
                 name: name,
+                user_id: userId,
                 value: value,
                 scopes: scopes
             })

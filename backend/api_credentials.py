@@ -17,6 +17,7 @@ class CredentialCreate(BaseModel):
     platform: str
     credential_type: str
     name: str
+    user_id: Optional[str] = None  # GitHub/GitLab/Gitee username
     value: str
     scopes: Optional[str] = None
 
@@ -25,6 +26,7 @@ class CredentialResponse(BaseModel):
     platform: str
     credential_type: str
     name: str
+    user_id: Optional[str]
     scopes: Optional[str]
     created_at: datetime
 
@@ -133,6 +135,7 @@ def create_token(credential: CredentialCreate, db: Session = Depends(get_db)):
         platform=PlatformType[credential.platform.upper()],
         credential_type=credential.credential_type,
         name=credential.name,
+        user_id=credential.user_id,
         encrypted_value=encrypted_value,
         scopes=credential.scopes
     )
