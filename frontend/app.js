@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initActivityControls();
     initCredentials();
     initDiagnostics();
+    initFormValidation();
     loadDashboardData();
     loadBackupPairs();
 });
@@ -316,6 +317,110 @@ async function clearAllLogs() {
         showNotification('Failed to clear logs', 'error');
         console.error('Clear logs failed:', error);
     }
+}
+
+// ============================================
+// Form Validation and Dynamic Display
+// ============================================
+
+function initFormValidation() {
+    // Add Backup Pair Form
+    const destPlatform = document.getElementById('destPlatform');
+    const destAuthGroup = document.getElementById('destAuthGroup');
+    const sourceAuth = document.getElementById('sourceAuth');
+    const destAuth = document.getElementById('destAuth');
+    const sourceUrl = document.getElementById('sourceUrl');
+    const destUrl = document.getElementById('destUrl');
+
+    // Show/hide destination authentication based on platform
+    if (destPlatform) {
+        destPlatform.addEventListener('change', () => {
+            if (destPlatform.value === 'local') {
+                destAuthGroup.style.display = 'none';
+            } else if (destPlatform.value) {
+                destAuthGroup.style.display = 'block';
+            }
+        });
+    }
+
+    // Update URL placeholder and validation based on auth method
+    if (sourceAuth && sourceUrl) {
+        sourceAuth.addEventListener('change', () => {
+            updateUrlPlaceholder(sourceAuth.value, sourceUrl, 'source');
+        });
+    }
+
+    if (destAuth && destUrl) {
+        destAuth.addEventListener('change', () => {
+            updateUrlPlaceholder(destAuth.value, destUrl, 'dest');
+        });
+    }
+
+    // Edit Backup Pair Form
+    const editDestPlatform = document.getElementById('editDestPlatform');
+    const editDestAuthGroup = document.getElementById('editDestAuthGroup');
+    const editSourceAuth = document.getElementById('editSourceAuth');
+    const editDestAuth = document.getElementById('editDestAuth');
+    const editSourceUrl = document.getElementById('editSourceUrl');
+    const editDestUrl = document.getElementById('editDestUrl');
+
+    if (editDestPlatform) {
+        editDestPlatform.addEventListener('change', () => {
+            if (editDestPlatform.value === 'local') {
+                editDestAuthGroup.style.display = 'none';
+            } else if (editDestPlatform.value) {
+                editDestAuthGroup.style.display = 'block';
+            }
+        });
+    }
+
+    if (editSourceAuth && editSourceUrl) {
+        editSourceAuth.addEventListener('change', () => {
+            updateUrlPlaceholder(editSourceAuth.value, editSourceUrl, 'source');
+        });
+    }
+
+    if (editDestAuth && editDestUrl) {
+        editDestAuth.addEventListener('change', () => {
+            updateUrlPlaceholder(editDestAuth.value, editDestUrl, 'dest');
+        });
+    }
+}
+
+function updateUrlPlaceholder(authType, urlInput, type) {
+    if (authType === 'ssh') {
+        urlInput.placeholder = 'git@github.com:username/repository.git';
+        urlInput.nextElementSibling.textContent = 'SSH URL format: git@host:username/repository.git';
+    } else {
+        urlInput.placeholder = 'https://github.com/username/repository.git';
+        urlInput.nextElementSibling.textContent = 'HTTPS URL format: https://host/username/repository.git';
+    }
+}
+
+function validateUrlFormat(url, authType) {
+    if (!url) return { valid: false, message: 'URL is required' };
+
+    if (authType === 'ssh') {
+        // SSH format: git@host:username/repo.git
+        const sshPattern = /^git@[^:]+:[^/]+\/.+\.git$/;
+        if (!sshPattern.test(url)) {
+            return {
+                valid: false,
+                message: 'Invalid SSH URL format. Expected: git@host:username/repository.git'
+            };
+        }
+    } else if (authType === 'token') {
+        // HTTPS format: https://host/username/repo.git
+        const httpsPattern = /^https:\/\/.+\/.+\.git$/;
+        if (!httpsPattern.test(url)) {
+            return {
+                valid: false,
+                message: 'Invalid HTTPS URL format. Expected: https://host/username/repository.git'
+            };
+        }
+    }
+
+    return { valid: true, message: '' };
 }
 
 // ============================================
@@ -885,13 +990,35 @@ document.addEventListener('DOMContentLoaded', () => {
         backupPairForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
+            const sourceAuth = document.getElementById('sourceAuth').value;
+            const sourceUrl = document.getElementById('sourceUrl').value;
+            const destPlatform = document.getElementById('destPlatform').value;
+            const destAuth = document.getElementById('destAuth').value;
+            const destUrl = document.getElementById('destUrl').value;
+
+            // Validate source URL format
+            const sourceValidation = validateUrlFormat(sourceUrl, sourceAuth);
+            if (!sourceValidation.valid) {
+                showNotification(`Source URL: ${sourceValidation.message}`, 'error');
+                return;
+            }
+
+            // Validate destination URL format (only for non-local destinations)
+            if (destPlatform !== 'local') {
+                const destValidation = validateUrlFormat(destUrl, destAuth);
+                if (!destValidation.valid) {
+                    showNotification(`Destination URL: ${destValidation.message}`, 'error');
+                    return;
+                }
+            }
+
             const taskData = {
                 name: document.getElementById('taskName').value,
                 icon: document.getElementById('taskIcon').value,
                 source_platform: document.getElementById('sourcePlatform').value,
-                source_url: document.getElementById('sourceUrl').value,
-                dest_platform: document.getElementById('destPlatform').value,
-                dest_url: document.getElementById('destUrl').value,
+                source_url: sourceUrl,
+                dest_platform: destPlatform,
+                dest_url: destUrl,
                 cron_expression: document.getElementById('cronExpression').value,
                 retry_count: parseInt(document.getElementById('retryCount').value)
             };
@@ -907,14 +1034,36 @@ document.addEventListener('DOMContentLoaded', () => {
         editBackupPairForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
+            const editSourceAuth = document.getElementById('editSourceAuth').value;
+            const editSourceUrl = document.getElementById('editSourceUrl').value;
+            const editDestPlatform = document.getElementById('editDestPlatform').value;
+            const editDestAuth = document.getElementById('editDestAuth').value;
+            const editDestUrl = document.getElementById('editDestUrl').value;
+
+            // Validate source URL format
+            const sourceValidation = validateUrlFormat(editSourceUrl, editSourceAuth);
+            if (!sourceValidation.valid) {
+                showNotification(`Source URL: ${sourceValidation.message}`, 'error');
+                return;
+            }
+
+            // Validate destination URL format (only for non-local destinations)
+            if (editDestPlatform !== 'local') {
+                const destValidation = validateUrlFormat(editDestUrl, editDestAuth);
+                if (!destValidation.valid) {
+                    showNotification(`Destination URL: ${destValidation.message}`, 'error');
+                    return;
+                }
+            }
+
             const taskId = document.getElementById('editTaskId').value;
             const taskData = {
                 name: document.getElementById('editTaskName').value,
                 icon: document.getElementById('editTaskIcon').value,
                 source_platform: document.getElementById('editSourcePlatform').value,
-                source_url: document.getElementById('editSourceUrl').value,
-                dest_platform: document.getElementById('editDestPlatform').value,
-                dest_url: document.getElementById('editDestUrl').value,
+                source_url: editSourceUrl,
+                dest_platform: editDestPlatform,
+                dest_url: editDestUrl,
                 cron_expression: document.getElementById('editCronExpression').value,
                 retry_count: parseInt(document.getElementById('editRetryCount').value)
             };

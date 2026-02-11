@@ -453,6 +453,15 @@ Exit code: 128</code></pre>
                         <input type="text" id="editDestUrl" class="form-input mono" placeholder="/backups/project-alpha or https://..." required>
                         <span class="form-hint">Local path or full repository URL</span>
                     </div>
+
+                    <div class="form-group" id="editDestAuthGroup" style="display: none;">
+                        <label class="form-label">Authentication</label>
+                        <select id="editDestAuth" class="form-input">
+                            <option value="ssh">SSH Key (Default)</option>
+                            <option value="token">Personal Access Token</option>
+                        </select>
+                        <span class="form-hint">SSH key is global; Token will be auto-matched by user ID</span>
+                    </div>
                 </div>
 
                 <!-- Schedule Configuration -->
@@ -572,6 +581,15 @@ Exit code: 128</code></pre>
                         <label class="form-label">Destination Path</label>
                         <input type="text" id="destUrl" class="form-input mono" placeholder="/backups/project-alpha or https://..." required>
                         <span class="form-hint">Local path or full repository URL</span>
+                    </div>
+
+                    <div class="form-group" id="destAuthGroup" style="display: none;">
+                        <label class="form-label">Authentication</label>
+                        <select id="destAuth" class="form-input">
+                            <option value="ssh">SSH Key (Default)</option>
+                            <option value="token">Personal Access Token</option>
+                        </select>
+                        <span class="form-hint">SSH key is global; Token will be auto-matched by user ID</span>
                     </div>
                 </div>
 
