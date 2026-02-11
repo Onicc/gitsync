@@ -696,20 +696,8 @@ function initActivityControls() {
 // ============================================
 
 function initCredentials() {
-    // SSH Key Management
-    const generateKeyBtn = document.querySelector('#credentials .credential-card:first-child .btn-primary');
-    if (generateKeyBtn) {
-        generateKeyBtn.addEventListener('click', generateSSHKey);
-    }
-
     // Load existing SSH key
     loadSSHKey();
-
-    // Access Tokens Management
-    const addTokenBtn = document.querySelector('#credentials .credential-card:last-child .btn-primary');
-    if (addTokenBtn) {
-        addTokenBtn.addEventListener('click', showAddTokenDialog);
-    }
 
     // Load existing tokens
     loadTokens();
@@ -777,7 +765,10 @@ function renderTokens(tokens) {
                 ${token.user_id ? `<div class="token-user-id">@${token.user_id}</div>` : ''}
                 <div class="token-scope">${token.scopes || 'No scopes specified'}</div>
             </div>
-            <button class="action-btn danger" onclick="deleteToken(${token.id})" title="Delete">✕</button>
+            <div class="token-actions">
+                <button class="action-btn" onclick="editToken(${token.id})" title="Edit">✏️</button>
+                <button class="action-btn danger" onclick="deleteToken(${token.id})" title="Delete">✕</button>
+            </div>
         </div>
     `).join('');
 }
@@ -798,6 +789,12 @@ function showAddTokenDialog() {
 function closeAddTokenModal() {
     const modal = document.getElementById('addTokenModal');
     modal.classList.remove('active');
+
+    // Reset modal state
+    tokenToEdit = null;
+    document.querySelector('#addTokenModal .modal-title').textContent = 'Add Access Token';
+    document.querySelector('#addTokenForm button[type="submit"]').textContent = 'Add Token';
+    document.getElementById('addTokenForm').reset();
 }
 
 // ============================================
@@ -872,7 +869,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const value = document.getElementById('tokenValue').value;
             const scopes = document.getElementById('tokenScopes').value;
 
-            await addToken(platform, name, userId, value, scopes);
+            // Check if we're editing or creating
+            if (tokenToEdit) {
+                await updateToken(tokenToEdit, platform, name, userId, value, scopes);
+            } else {
+                await addToken(platform, name, userId, value, scopes);
+            }
             closeAddTokenModal();
         });
     }
@@ -1011,8 +1013,74 @@ async function addToken(platform, name, userId, value, scopes) {
     }
 }
 
+async function updateToken(tokenId, platform, name, userId, value, scopes) {
+    try {
+        await fetchAPI(`/credentials/tokens/${tokenId}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+                platform: platform,
+                credential_type: 'token',
+                name: name,
+                user_id: userId,
+                value: value,
+                scopes: scopes
+            })
+        });
+
+        showNotification('Token updated successfully', 'success');
+        loadTokens();
+    } catch (error) {
+        showNotification('Failed to update token', 'error');
+        console.error('Token update failed:', error);
+    }
+}
+
 // Store token ID for deletion confirmation
 let tokenToDelete = null;
+let tokenToEdit = null;
+
+function editToken(tokenId) {
+    // Load token data and show edit modal
+    loadTokenForEdit(tokenId);
+}
+
+async function loadTokenForEdit(tokenId) {
+    try {
+        const tokens = await fetchAPI('/credentials/tokens');
+        const token = tokens.find(t => t.id === tokenId);
+
+        if (!token) {
+            showNotification('Token not found', 'error');
+            return;
+        }
+
+        // Store token ID for update
+        tokenToEdit = tokenId;
+
+        // Populate form fields
+        document.getElementById('tokenPlatform').value = token.platform.toLowerCase();
+        document.getElementById('tokenName').value = token.name;
+        document.getElementById('tokenUserId').value = token.user_id || '';
+        document.getElementById('tokenValue').value = ''; // Don't show existing token value
+        document.getElementById('tokenScopes').value = token.scopes || '';
+
+        // Change modal title and button text
+        document.querySelector('#addTokenModal .modal-title').textContent = 'Edit Access Token';
+        document.querySelector('#addTokenForm button[type="submit"]').textContent = 'Update Token';
+
+        // Show modal
+        const modal = document.getElementById('addTokenModal');
+        modal.classList.add('active');
+
+        // Focus first input
+        setTimeout(() => {
+            document.getElementById('tokenPlatform').focus();
+        }, 100);
+    } catch (error) {
+        showNotification('Failed to load token data', 'error');
+        console.error('Load token error:', error);
+    }
+}
 
 function deleteToken(tokenId) {
     tokenToDelete = tokenId;

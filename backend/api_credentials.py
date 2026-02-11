@@ -51,6 +51,12 @@ def generate_ssh_key(db: Session = Depends(get_db)):
 
         key_path = ssh_dir / "gitsync_rsa"
 
+        # Remove existing key files if they exist
+        if key_path.exists():
+            key_path.unlink()
+        if Path(f"{key_path}.pub").exists():
+            Path(f"{key_path}.pub").unlink()
+
         # Generate SSH key
         subprocess.run([
             "ssh-keygen",
@@ -154,3 +160,24 @@ def delete_token(token_id: int, db: Session = Depends(get_db)):
     db.delete(token)
     db.commit()
     return {"message": "Token deleted successfully"}
+
+@router.put("/tokens/{token_id}", response_model=CredentialResponse)
+def update_token(token_id: int, credential: CredentialCreate, db: Session = Depends(get_db)):
+    """Update an access token"""
+    token = db.query(Credential).filter(Credential.id == token_id).first()
+    if not token:
+        raise HTTPException(status_code=404, detail="Token not found")
+
+    # Update fields
+    token.platform = PlatformType[credential.platform.upper()]
+    token.name = credential.name
+    token.user_id = credential.user_id
+    token.scopes = credential.scopes
+
+    # Only update encrypted_value if a new value is provided
+    if credential.value:
+        token.encrypted_value = encryption.encrypt(credential.value)
+
+    db.commit()
+    db.refresh(token)
+    return token
