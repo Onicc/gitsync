@@ -1343,6 +1343,15 @@ body {
     padding: var(--spacing-lg);
     overflow-y: auto;
     max-height: calc(90vh - 140px);
+
+    /* Hide scrollbar completely */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+/* Hide scrollbar for Webkit browsers */
+.modal-body::-webkit-scrollbar {
+    display: none;
 }
 
 .modal-actions {
