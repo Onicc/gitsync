@@ -9,13 +9,13 @@ services:
     volumes:
       - ./data:/app/database          # Database storage
       - ./backups:/backups             # Backup repositories
-      - ~/.ssh:/root/.ssh:ro           # SSH keys (optional)
+      - ./docker_ssh:/root/.ssh        # SSH keys (mapped to local docker_ssh folder)
     environment:
-      - DATABASE_URL=sqlite:///./database/git_backup.db
+      - DATABASE_URL=sqlite:////app/database/git_backup.db
       - ENCRYPT_KEY=${ENCRYPT_KEY:-your_secret_key_here}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
       interval: 30s
       timeout: 10s
       retries: 3
