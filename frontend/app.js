@@ -327,17 +327,43 @@ async function exportLogs() {
 }
 
 async function clearAllLogs() {
-    if (!confirm('Are you sure you want to clear all diagnostic logs? This action cannot be undone.')) {
-        return;
-    }
+    // Show custom confirmation modal instead of confirm()
+    const modal = document.getElementById('clearLogsModal');
+    modal.classList.add('active');
+}
 
+function closeClearLogsModal() {
+    const modal = document.getElementById('clearLogsModal');
+    modal.classList.remove('active');
+}
+
+async function confirmClearLogs() {
     try {
         await fetchAPI('/stats/logs', { method: 'DELETE' });
         showNotification('All logs cleared successfully', 'success');
+        closeClearLogsModal();
         await loadFailedTasks();
     } catch (error) {
         showNotification('Failed to clear logs', 'error');
         console.error('Clear logs failed:', error);
+    }
+}
+
+// ============================================
+// Activity Log Clear Functions
+// ============================================
+
+function closeClearActivityLogsModal() {
+    const modal = document.getElementById('clearActivityLogsModal');
+    modal.classList.remove('active');
+}
+
+function confirmClearActivityLogs() {
+    const activityLog = document.querySelector('.activity-log');
+    if (activityLog) {
+        activityLog.innerHTML = '';
+        showNotification('Activity stream cleared', 'success');
+        closeClearActivityLogsModal();
     }
 }
 
@@ -707,10 +733,10 @@ function initActivityControls() {
                 });
                 showNotification('Activity log paused', 'info');
             } else if (text.includes('Clear')) {
-                const activityLog = document.querySelector('.activity-log');
-                if (activityLog && confirm('Clear all activity logs?')) {
-                    activityLog.innerHTML = '';
-                    showNotification('Activity log cleared', 'success');
+                // Show custom confirmation modal
+                const modal = document.getElementById('clearActivityLogsModal');
+                if (modal) {
+                    modal.classList.add('active');
                 }
             }
 
@@ -794,18 +820,40 @@ async function viewSSHKeyPublicKey(keyId) {
     try {
         const result = await fetchAPI(`/credentials/ssh-keys/${keyId}/public-key`);
 
-        // Show public key in a modal or alert
-        const message = `Public Key:\n\n${result.public_key}\n\nFingerprint: ${result.fingerprint}\n\nAdd this public key to your Git platform account.`;
+        // Populate modal with SSH key data
+        document.getElementById('sshKeyContent').textContent = result.public_key;
+        document.getElementById('sshKeyFingerprint').textContent = result.fingerprint;
 
-        // Copy to clipboard
+        // Store public key for copy function
+        window.currentSSHKey = result.public_key;
+
+        // Show modal
+        const modal = document.getElementById('viewSSHKeyModal');
+        modal.classList.add('active');
+
+        // Auto-copy to clipboard
         await navigator.clipboard.writeText(result.public_key);
         showNotification('Public key copied to clipboard', 'success');
-
-        // Also show in alert for viewing
-        alert(message);
     } catch (error) {
         showNotification('Failed to load public key', 'error');
         console.error('Load public key error:', error);
+    }
+}
+
+function closeViewSSHKeyModal() {
+    const modal = document.getElementById('viewSSHKeyModal');
+    modal.classList.remove('active');
+    window.currentSSHKey = null;
+}
+
+async function copySSHKey() {
+    if (window.currentSSHKey) {
+        try {
+            await navigator.clipboard.writeText(window.currentSSHKey);
+            showNotification('Public key copied to clipboard', 'success');
+        } catch (err) {
+            console.error('Failed to copy:', err);
+        }
     }
 }
 
@@ -1147,6 +1195,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if (deleteModal && deleteModal.classList.contains('active')) {
                 closeDeleteConfirmModal();
             }
+            const viewSSHKeyModal = document.getElementById('viewSSHKeyModal');
+            if (viewSSHKeyModal && viewSSHKeyModal.classList.contains('active')) {
+                closeViewSSHKeyModal();
+            }
+            const clearLogsModal = document.getElementById('clearLogsModal');
+            if (clearLogsModal && clearLogsModal.classList.contains('active')) {
+                closeClearLogsModal();
+            }
+            const clearActivityLogsModal = document.getElementById('clearActivityLogsModal');
+            if (clearActivityLogsModal && clearActivityLogsModal.classList.contains('active')) {
+                closeClearActivityLogsModal();
+            }
         }
     });
 
@@ -1176,6 +1236,36 @@ document.addEventListener('DOMContentLoaded', () => {
         deleteSyncTaskModal.addEventListener('click', (e) => {
             if (e.target === deleteSyncTaskModal || e.target.classList.contains('modal-overlay')) {
                 closeDeleteSyncTaskModal();
+            }
+        });
+    }
+
+    // Close View SSH Key modal on overlay click
+    const viewSSHKeyModal = document.getElementById('viewSSHKeyModal');
+    if (viewSSHKeyModal) {
+        viewSSHKeyModal.addEventListener('click', (e) => {
+            if (e.target === viewSSHKeyModal || e.target.classList.contains('modal-overlay')) {
+                closeViewSSHKeyModal();
+            }
+        });
+    }
+
+    // Close Clear Logs modal on overlay click
+    const clearLogsModal = document.getElementById('clearLogsModal');
+    if (clearLogsModal) {
+        clearLogsModal.addEventListener('click', (e) => {
+            if (e.target === clearLogsModal || e.target.classList.contains('modal-overlay')) {
+                closeClearLogsModal();
+            }
+        });
+    }
+
+    // Close Clear Activity Logs modal on overlay click
+    const clearActivityLogsModal = document.getElementById('clearActivityLogsModal');
+    if (clearActivityLogsModal) {
+        clearActivityLogsModal.addEventListener('click', (e) => {
+            if (e.target === clearActivityLogsModal || e.target.classList.contains('modal-overlay')) {
+                closeClearActivityLogsModal();
             }
         });
     }

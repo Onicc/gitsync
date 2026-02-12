@@ -739,6 +739,18 @@ body {
     color: var(--status-failed);
 }
 
+.status-badge.paused {
+    background: rgba(125, 133, 144, 0.15);
+    color: #a8b3c1;
+    border: 1px solid rgba(125, 133, 144, 0.3);
+}
+
+.status-badge.pending {
+    background: rgba(0, 217, 255, 0.12);
+    color: #00d9ff;
+    border: 1px solid rgba(0, 217, 255, 0.25);
+}
+
 .actions {
     display: flex;
     gap: var(--spacing-xs);
@@ -749,6 +761,8 @@ body {
 .action-btn {
     width: 32px;
     height: 32px;
+    min-width: 32px;
+    min-height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -759,6 +773,9 @@ body {
     transition: all var(--transition-fast);
     border-radius: 4px;
     font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    font-family: inherit;
 }
 
 .action-btn:hover {
@@ -766,6 +783,10 @@ body {
     border-color: var(--border-bright);
     color: var(--text-primary);
     transform: translateY(-1px);
+}
+
+.action-btn:active {
+    transform: translateY(0);
 }
 
 .action-btn.danger:hover {

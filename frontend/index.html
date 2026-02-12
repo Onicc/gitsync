@@ -734,6 +734,76 @@ Exit code: 128</code></pre>
         </div>
     </div>
 
+    <!-- View SSH Key Modal -->
+    <div id="viewSSHKeyModal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2 class="modal-title">🔐 SSH Public Key</h2>
+                <button class="modal-close" onclick="closeViewSSHKeyModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Public Key</label>
+                    <div class="key-box">
+                        <code class="key-content" id="sshKeyContent"></code>
+                        <button class="copy-btn" onclick="copySSHKey()" title="Copy">📋</button>
+                    </div>
+                    <span class="form-hint">Add this public key to your Git platform account</span>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Fingerprint</label>
+                    <div class="info-value" id="sshKeyFingerprint" style="font-family: var(--font-body); font-size: 13px; color: var(--text-secondary); padding: var(--spacing-sm) 0;"></div>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-primary" onclick="closeViewSSHKeyModal()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clear All Logs Confirmation Modal -->
+    <div id="clearLogsModal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-confirm">
+            <div class="modal-header modal-header-danger">
+                <div class="modal-icon-danger">⚠</div>
+                <h2 class="modal-title">Clear All Diagnostic Logs</h2>
+                <button class="modal-close" onclick="closeClearLogsModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p class="confirm-message">Are you sure you want to clear all diagnostic logs?</p>
+                <p class="confirm-warning">This action cannot be undone. All error logs and diagnostic information will be permanently deleted.</p>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeClearLogsModal()">Cancel</button>
+                    <button type="button" class="btn-danger" onclick="confirmClearLogs()">Clear All Logs</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clear Activity Logs Confirmation Modal -->
+    <div id="clearActivityLogsModal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-confirm">
+            <div class="modal-header modal-header-danger">
+                <div class="modal-icon-danger">⚠</div>
+                <h2 class="modal-title">Clear Activity Stream</h2>
+                <button class="modal-close" onclick="closeClearActivityLogsModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p class="confirm-message">Are you sure you want to clear the activity stream?</p>
+                <p class="confirm-warning">This will clear the current view of activity logs. This action only affects the display and does not delete stored logs.</p>
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeClearActivityLogsModal()">Cancel</button>
+                    <button type="button" class="btn-danger" onclick="confirmClearActivityLogs()">Clear Activity Stream</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>

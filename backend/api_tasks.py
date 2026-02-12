@@ -40,6 +40,7 @@ class TaskResponse(BaseModel):
     dest_platform: str
     dest_url: str
     cron_expression: str
+    retry_count: int
     enabled: bool
     status: str
     last_run: Optional[datetime]
@@ -104,6 +105,11 @@ def update_task(task_id: int, task: TaskCreate, db: Session = Depends(get_db)):
 
     db.commit()
     db.refresh(db_task)
+
+    # Reschedule task if enabled
+    if scheduler and db_task.enabled:
+        scheduler.schedule_task(db_task)
+
     return db_task
 
 @router.delete("/{task_id}")
