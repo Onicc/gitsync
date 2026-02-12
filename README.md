@@ -48,7 +48,7 @@ Docker deployment provides isolated environment with automatic dependency manage
 #### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/Onicc/git-backup.git
+git clone https://github.com/Onicc/gitsync.git
 cd git-backup
 ```
 
@@ -112,7 +112,7 @@ Local deployment gives you more control and easier debugging.
 #### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/Onicc/git-backup.git
+git clone https://github.com/Onicc/gitsync.git
 cd git-backup
 ```
 
@@ -502,8 +502,8 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## 📧 Support
 
 For issues and questions:
-- GitHub Issues: https://github.com/Onicc/git-backup/issues
-- Documentation: https://github.com/Onicc/git-backup/wiki
+- GitHub Issues: https://github.com/Onicc/gitsync/issues
+- Documentation: https://github.com/Onicc/gitsync/wiki
 
 ## 🙏 Acknowledgments
 
