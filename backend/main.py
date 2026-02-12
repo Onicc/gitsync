@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 import logging
 
 from database import init_db
-from api_tasks import router as tasks_router
+from api_tasks import router as tasks_router, set_scheduler
 from api_stats import router as stats_router
 from api_credentials import router as credentials_router
 from scheduler import TaskScheduler
@@ -18,6 +18,9 @@ logging.basicConfig(
 
 # Global scheduler instance
 scheduler = TaskScheduler()
+
+# Set scheduler reference in api_tasks
+set_scheduler(scheduler)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

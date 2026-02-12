@@ -12,6 +12,14 @@ router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 # Git sync engine instance
 git_engine = GitSyncEngine()
 
+# Scheduler instance (set by main.py)
+scheduler = None
+
+def set_scheduler(sched):
+    """Set the scheduler instance"""
+    global scheduler
+    scheduler = sched
+
 # Pydantic schemas
 class TaskCreate(BaseModel):
     name: str
@@ -182,7 +190,13 @@ def pause_task(task_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Task not found")
 
     task.enabled = False
+    task.status = TaskStatus.PAUSED
     db.commit()
+
+    # Remove task from scheduler
+    if scheduler:
+        scheduler.unschedule_task(task_id)
+
     return {"message": "Task paused"}
 
 @router.post("/{task_id}/resume")
@@ -193,5 +207,11 @@ def resume_task(task_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Task not found")
 
     task.enabled = True
+    task.status = TaskStatus.PENDING
     db.commit()
+
+    # Add task back to scheduler
+    if scheduler:
+        scheduler.schedule_task(task)
+
     return {"message": "Task resumed"}

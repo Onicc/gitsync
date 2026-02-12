@@ -85,7 +85,10 @@ function renderSyncTasks(tasks) {
             <td><span class="status-badge ${task.status.toLowerCase()}">${getStatusIcon(task.status)} ${task.status}</span></td>
             <td class="actions">
                 <button class="action-btn" onclick="syncTask(${task.id})" title="Sync Now">⟳</button>
-                <button class="action-btn" onclick="pauseTask(${task.id})" title="Pause">⏸</button>
+                ${task.enabled
+                    ? `<button class="action-btn" onclick="pauseTask(${task.id})" title="Pause">⏸</button>`
+                    : `<button class="action-btn" onclick="resumeTask(${task.id})" title="Resume">▶</button>`
+                }
                 <button class="action-btn" onclick="editTask(${task.id})" title="Configure">⚙</button>
                 <button class="action-btn danger" onclick="deleteTask(${task.id})" title="Delete">✕</button>
             </td>
@@ -155,6 +158,16 @@ async function pauseTask(taskId) {
         setTimeout(loadSyncTasks, 500);
     } catch (error) {
         showNotification('Failed to pause task', 'error');
+    }
+}
+
+async function resumeTask(taskId) {
+    try {
+        await fetchAPI(`/tasks/${taskId}/resume`, { method: 'POST' });
+        showNotification('Task resumed', 'success');
+        setTimeout(loadSyncTasks, 500);
+    } catch (error) {
+        showNotification('Failed to resume task', 'error');
     }
 }
 

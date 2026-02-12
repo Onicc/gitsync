@@ -62,6 +62,13 @@ class TaskScheduler:
         except Exception as e:
             logger.error(f"Failed to schedule task {task.name}: {e}")
 
+    def unschedule_task(self, task_id: int):
+        """Remove a task from the scheduler"""
+        job_id = f"task_{task_id}"
+        if self.scheduler.get_job(job_id):
+            self.scheduler.remove_job(job_id)
+            logger.info(f"Unscheduled task: {task_id}")
+
     def execute_task(self, task_id: int):
         """Execute a backup task"""
         db = SessionLocal()
