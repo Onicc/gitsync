@@ -25,19 +25,30 @@
 
             <nav class="nav-menu">
                 <a href="#dashboard" class="nav-item active">
-                    <span class="nav-icon">▣</span>
+                    <span class="nav-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+                    </span>
                     <span class="nav-label">Dashboard</span>
                 </a>
+
                 <a href="#sync-tasks" class="nav-item">
-                    <span class="nav-icon">⇄</span>
+                    <span class="nav-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+                    </span>
                     <span class="nav-label">Sync Tasks</span>
                 </a>
+
                 <a href="#credentials" class="nav-item">
-                    <span class="nav-icon">🔑</span>
+                    <span class="nav-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3L15.5 7.5z"/></svg>
+                    </span>
                     <span class="nav-label">Credentials</span>
                 </a>
+
                 <a href="#diagnostics" class="nav-item">
-                    <span class="nav-icon">⚠</span>
+                    <span class="nav-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                    </span>
                     <span class="nav-label">Diagnostics</span>
                 </a>
             </nav>
@@ -787,18 +798,22 @@ Exit code: 128</code></pre>
     <!-- Clear Activity Logs Confirmation Modal -->
     <div id="clearActivityLogsModal" class="modal">
         <div class="modal-overlay"></div>
-        <div class="modal-content modal-confirm">
-            <div class="modal-header modal-header-danger">
-                <div class="modal-icon-danger">⚠</div>
+        <div class="modal-content">
+            <div class="modal-header">
                 <h2 class="modal-title">Clear Activity Stream</h2>
                 <button class="modal-close" onclick="closeClearActivityLogsModal()">✕</button>
             </div>
             <div class="modal-body">
-                <p class="confirm-message">Are you sure you want to clear the activity stream?</p>
-                <p class="confirm-warning">This will clear the current view of activity logs. This action only affects the display and does not delete stored logs.</p>
+                <div class="form-group">
+                    <label class="form-label">Confirmation</label>
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6;">
+                        This will clear the current view of activity logs in the dashboard stream.
+                    </p>
+                    <span class="form-hint">Note: This action only affects the display and does not delete stored logs from the database.</span>
+                </div>
                 <div class="modal-actions">
                     <button type="button" class="btn-secondary" onclick="closeClearActivityLogsModal()">Cancel</button>
-                    <button type="button" class="btn-danger" onclick="confirmClearActivityLogs()">Clear Activity Stream</button>
+                    <button type="button" class="btn-primary" onclick="confirmClearActivityLogs()">Clear Stream</button>
                 </div>
             </div>
         </div>
