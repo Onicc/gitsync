@@ -1,9 +1,10 @@
-version: '3.8'
+name: gitsync
 
 services:
-  git-backup-pro:
+  gitsync:
     build: .
-    container_name: gitsync-pro
+    image: gitsync:latest
+    container_name: gitsync
     ports:
       - "8080:8080"
     volumes:

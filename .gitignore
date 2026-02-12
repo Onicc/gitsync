@@ -21,6 +21,9 @@ data/
 backups/
 backend/temp_repos/
 
+# ssh
+docker_ssh
+
 # IDE
 .vscode/
 .idea/

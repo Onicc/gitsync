@@ -1,4 +1,4 @@
-# GitSync Pro
+# GitSync
 
 🚀 Professional Git Repository Backup and Synchronization System
 
@@ -78,7 +78,7 @@ Open your browser and navigate to: **http://localhost:8080**
 #### Docker Directory Structure
 
 ```
-git-backup/
+gitsync/
 ├── data/                    # Database files (persisted)
 ├── backups/                 # Backup repositories (persisted)
 ├── docker_ssh/             # SSH keys and config (persisted)
@@ -102,7 +102,7 @@ docker-compose restart
 docker-compose up -d --build
 
 # View container status
-docker ps | grep gitsync-pro
+docker ps | grep gitsync
 ```
 
 ### Option 2: Local Development
@@ -154,7 +154,7 @@ Open your browser and navigate to: **http://localhost:8080**
 #### Local Directory Structure
 
 ```
-git-backup/
+gitsync/
 ├── backend/
 │   ├── main.py
 │   ├── database.py
@@ -431,7 +431,7 @@ docker-compose up -d
 **Solution**:
 ```bash
 # Check logs
-docker logs gitsync-pro
+docker logs gitsync
 
 # Common issues:
 # 1. Port already in use - change port in docker-compose.yml
@@ -514,4 +514,4 @@ For issues and questions:
 
 ---
 
-Made with ❤️ by the GitSync Pro team
+Made with ❤️ by the GitSync team

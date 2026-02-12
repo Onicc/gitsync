@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "🚀 Starting GitSync Pro..."
+echo "🚀 Starting GitSync..."
 
 # Check if Docker is installed
 if ! command -v docker &> /dev/null; then
@@ -24,7 +24,7 @@ docker-compose build
 echo "🔄 Starting services..."
 docker-compose up -d
 
-echo "✅ GitSync Pro is running!"
+echo "✅ GitSync is running!"
 echo "🌐 Access the web interface at: http://localhost:8080"
 echo ""
 echo "📋 Useful commands:"

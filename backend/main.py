@@ -30,7 +30,7 @@ async def lifespan(app: FastAPI):
     scheduler.stop()
 
 app = FastAPI(
-    title="GitSync Pro API",
+    title="GitSync API",
     description="Git Repository Backup and Synchronization System",
     version="1.0.0",
     lifespan=lifespan
@@ -53,7 +53,7 @@ app.include_router(credentials_router)
 @app.get("/api/health")
 def health_check():
     """Health check endpoint"""
-    return {"status": "healthy", "service": "GitSync Pro"}
+    return {"status": "healthy", "service": "GitSync"}
 
 # Mount static files (frontend) - must be last
 app.mount("/", StaticFiles(directory="../frontend", html=True), name="frontend")

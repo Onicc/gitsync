@@ -1,5 +1,5 @@
 // ============================================
-// GitSync Pro - Application JavaScript
+// GitSync - Application JavaScript
 // ============================================
 
 const API_BASE = '/api';

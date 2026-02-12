@@ -77,8 +77,8 @@
 
 ```yaml
 services:
-  git-backup-pro:
-    image: git-backup-pro:latest
+  gitsync:
+    image: gitsync:latest
     ports:
       - "8080:8080"
     volumes:
