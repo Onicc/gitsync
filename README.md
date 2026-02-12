@@ -40,6 +40,28 @@ docker run -d \
 - **📝 Detailed Logging**: Track all sync operations with error diagnostics
 - **💾 Data Persistence**: All data (database, SSH keys, backups) persists across restarts
 
+## 📸 Screenshots
+
+### Dashboard
+Real-time monitoring with system statistics and live activity stream.
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+### Sync Tasks
+Manage all your backup tasks with intuitive controls.
+
+![Sync Tasks](docs/screenshots/sync-tasks.png)
+
+### Credentials Management
+Secure SSH key and access token management.
+
+![Credentials](docs/screenshots/credentials.png)
+
+### Diagnostics
+Detailed error logs and troubleshooting information.
+
+![Diagnostics](docs/screenshots/diagnostics.png)
+
 ## 🏗️ Architecture
 
 - **Backend**: Python 3.11 + FastAPI
