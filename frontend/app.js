@@ -68,7 +68,16 @@ function updateDashboardStats(stats) {
     if (statCards[0]) statCards[0].querySelector('.stat-value').textContent = stats.successful;
     if (statCards[1]) statCards[1].querySelector('.stat-value').textContent = stats.paused;
     if (statCards[2]) statCards[2].querySelector('.stat-value').textContent = stats.failed;
-    if (statCards[3]) statCards[3].querySelector('.stat-value').textContent = stats.scheduled;
+    if (statCards[3]) {
+        statCards[3].querySelector('.stat-value').textContent = stats.scheduled;
+        // Update next execution time
+        const trendElement = statCards[3].querySelector('.stat-trend');
+        if (trendElement && stats.next_execution) {
+            trendElement.textContent = `Next: ${stats.next_execution}`;
+        } else if (trendElement) {
+            trendElement.textContent = 'No scheduled tasks';
+        }
+    }
 }
 
 async function loadSyncTasks() {
@@ -256,6 +265,9 @@ async function loadTaskForEdit(taskId) {
         document.getElementById('editCronExpression').value = task.cron_expression;
         document.getElementById('editRetryCount').value = task.retry_count;
 
+        // Update cron hint based on loaded expression
+        updateCronHint('editCronExpression', 'editCronHint');
+
         // Show modal
         const modal = document.getElementById('editSyncTaskModal');
         modal.classList.add('active');
@@ -404,6 +416,14 @@ function initFormValidation() {
         });
     }
 
+    // Add cron expression hint update for Add Sync Task
+    const cronExpression = document.getElementById('cronExpression');
+    if (cronExpression) {
+        cronExpression.addEventListener('input', () => {
+            updateCronHint('cronExpression', 'cronHint');
+        });
+    }
+
     // Edit Sync Task Form
     const editDestPlatform = document.getElementById('editDestPlatform');
     const editDestAuthGroup = document.getElementById('editDestAuthGroup');
@@ -431,6 +451,14 @@ function initFormValidation() {
     if (editDestAuth && editDestUrl) {
         editDestAuth.addEventListener('change', () => {
             updateUrlPlaceholder(editDestAuth.value, editDestUrl, 'dest');
+        });
+    }
+
+    // Add cron expression hint update for Edit Sync Task
+    const editCronExpression = document.getElementById('editCronExpression');
+    if (editCronExpression) {
+        editCronExpression.addEventListener('input', () => {
+            updateCronHint('editCronExpression', 'editCronHint');
         });
     }
 }
@@ -1003,36 +1031,90 @@ function closeEditSyncTaskModal() {
     modal.classList.remove('active');
 }
 
+// ============================================
+// Cron Expression Parser
+// ============================================
+
+function parseCronExpression(cronExpr) {
+    if (!cronExpr || cronExpr.trim() === '') {
+        return 'Enter a valid cron expression';
+    }
+
+    const parts = cronExpr.trim().split(/\s+/);
+    if (parts.length !== 5) {
+        return 'Invalid cron format (expected: minute hour day month weekday)';
+    }
+
+    const [minute, hour, day, month, weekday] = parts;
+
+    // Common patterns
+    if (cronExpr === '0 * * * *') return 'Runs at the start of every hour';
+    if (cronExpr === '0 2 * * *') return 'Runs every day at 2:00 AM';
+    if (cronExpr === '0 2 * * 0') return 'Runs every Sunday at 2:00 AM';
+    if (cronExpr === '0 2 1 * *') return 'Runs on the 1st of every month at 2:00 AM';
+
+    // Parse custom patterns
+    let description = 'Runs ';
+
+    // Frequency
+    if (minute === '*' && hour === '*' && day === '*' && month === '*' && weekday === '*') {
+        return 'Runs every minute';
+    }
+
+    // Daily pattern
+    if (day === '*' && month === '*' && weekday === '*') {
+        if (minute === '0' && hour !== '*') {
+            description += `every day at ${hour.padStart(2, '0')}:00`;
+        } else if (hour !== '*') {
+            description += `every day at ${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
+        } else {
+            description += `every hour at minute ${minute}`;
+        }
+        return description;
+    }
+
+    // Weekly pattern
+    if (day === '*' && month === '*' && weekday !== '*') {
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const dayName = days[parseInt(weekday)] || `day ${weekday}`;
+        description += `every ${dayName} at ${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
+        return description;
+    }
+
+    // Monthly pattern
+    if (day !== '*' && month === '*' && weekday === '*') {
+        description += `on day ${day} of every month at ${hour.padStart(2, '0')}:${minute.padStart(2, '0')}`;
+        return description;
+    }
+
+    // Generic description
+    return `Custom schedule: ${cronExpr}`;
+}
+
+function updateCronHint(inputId, hintId) {
+    const input = document.getElementById(inputId);
+    const hint = document.getElementById(hintId);
+
+    if (input && hint) {
+        const description = parseCronExpression(input.value);
+        hint.textContent = description;
+    }
+}
+
 function setCronPreset(expression, description) {
     const cronInput = document.getElementById('cronExpression');
-    const hint = cronInput.nextElementSibling;
-
     cronInput.value = expression;
-    if (hint && hint.classList.contains('form-hint')) {
-        const descriptions = {
-            'Every Hour': 'Runs at the start of every hour',
-            'Daily 2AM': 'Runs every day at 2:00 AM',
-            'Weekly': 'Runs every Sunday at 2:00 AM',
-            'Monthly': 'Runs on the 1st of every month at 2:00 AM'
-        };
-        hint.textContent = descriptions[description] || description;
-    }
+
+    // Update hint dynamically
+    updateCronHint('cronExpression', 'cronHint');
 }
 
 function setEditCronPreset(expression, description) {
     const cronInput = document.getElementById('editCronExpression');
-    const hint = cronInput.nextElementSibling;
-
     cronInput.value = expression;
-    if (hint && hint.classList.contains('form-hint')) {
-        const descriptions = {
-            'Every Hour': 'Runs at the start of every hour',
-            'Daily 2AM': 'Runs every day at 2:00 AM',
-            'Weekly': 'Runs every Sunday at 2:00 AM',
-            'Monthly': 'Runs on the 1st of every month at 2:00 AM'
-        };
-        hint.textContent = descriptions[description] || description;
-    }
+
+    // Update hint dynamically
+    updateCronHint('editCronExpression', 'editCronHint');
 }
 
 // Handle modal form submission

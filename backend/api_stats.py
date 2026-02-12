@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 from database import get_db
 from models import BackupTask, TaskStatus, TaskLog
 from pydantic import BaseModel
+from croniter import croniter
 
 router = APIRouter(prefix="/api/stats", tags=["statistics"])
 
@@ -15,6 +16,7 @@ class DashboardStats(BaseModel):
     paused: int
     failed: int
     scheduled: int
+    next_execution: Optional[str] = None
 
 @router.get("/dashboard", response_model=DashboardStats)
 def get_dashboard_stats(db: Session = Depends(get_db)):
@@ -34,12 +36,36 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
         BackupTask.enabled == True
     ).count()
 
+    # Calculate next execution time across all enabled tasks
+    next_execution = None
+    enabled_tasks = db.query(BackupTask).filter(
+        BackupTask.enabled == True
+    ).all()
+
+    if enabled_tasks:
+        next_times = []
+        now = datetime.now()
+
+        for task in enabled_tasks:
+            try:
+                cron = croniter(task.cron_expression, now)
+                next_time = cron.get_next(datetime)
+                next_times.append(next_time)
+            except Exception:
+                # Skip invalid cron expressions
+                continue
+
+        if next_times:
+            earliest = min(next_times)
+            next_execution = earliest.strftime("%H:%M")
+
     return DashboardStats(
         total_tasks=total,
         successful=successful,
         paused=paused,
         failed=failed,
-        scheduled=scheduled
+        scheduled=scheduled,
+        next_execution=next_execution
     )
 
 class LogEntry(BaseModel):
