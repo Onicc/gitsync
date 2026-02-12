@@ -70,21 +70,6 @@ Detailed error logs and troubleshooting information.
 - **Scheduler**: APScheduler with Cron support
 - **Git Engine**: GitPython + subprocess for mirror operations
 
-## 📋 Prerequisites
-
-### For Docker Deployment (Recommended)
-- Docker 20.10 or higher
-- Docker Compose 2.0 or higher
-- 2GB RAM minimum
-- 10GB disk space (for backups)
-
-### For Local Development
-- Python 3.11 or higher
-- Git 2.30 or higher
-- SSH client (openssh-client)
-- 2GB RAM minimum
-- 10GB disk space (for backups)
-
 ## 🚀 Installation
 
 ### Option 1: Docker Hub (Recommended)
