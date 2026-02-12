@@ -646,9 +646,8 @@ body {
     vertical-align: middle;
 }
 
-.task-name {
-    font-weight: 600;
-    font-size: 13px;
+.actions {
+    text-align: center;
 }
 
 .task-name .task-icon {
@@ -762,10 +761,7 @@ body {
 }
 
 .actions {
-    display: flex;
-    gap: var(--spacing-xs);
-    align-items: center;
-    justify-content: center;
+    text-align: center;
 }
 
 .action-btn {
@@ -788,6 +784,7 @@ body {
     font-family: inherit;
     vertical-align: middle;
     text-align: center;
+    margin: 0 calc(var(--spacing-xs) / 2);
 }
 
 .action-btn:hover {
