@@ -9,16 +9,24 @@ document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
     initCopyButtons();
     initActivityLog();
-    initFormPresets();
     initDashboardButtons();
     initStatCards();
-    initSyncTaskActions();
     initActivityControls();
     initCredentials();
     initDiagnostics();
     initFormValidation();
     loadDashboardData();
     loadSyncTasks();
+
+    // Auto-refresh dashboard stats every 5 seconds
+    setInterval(() => {
+        loadDashboardData();
+    }, 5000);
+
+    // Auto-refresh sync tasks every 5 seconds
+    setInterval(() => {
+        loadSyncTasks();
+    }, 5000);
 });
 
 // ============================================
@@ -224,6 +232,7 @@ async function updateBackupTask(taskId, taskData) {
     } catch (error) {
         showNotification('Failed to update sync task', 'error');
         console.error('Task update failed:', error);
+        console.error('Task data sent (JSON):', JSON.stringify(taskData, null, 2));
     }
 }
 
@@ -560,62 +569,6 @@ function getStatusLabel(status) {
 }
 
 // ============================================
-// Form Preset Buttons
-// ============================================
-
-function initFormPresets() {
-    const presetButtons = document.querySelectorAll('.preset-btn');
-    const cronInput = document.querySelector('.form-input.mono');
-
-    if (!cronInput) return;
-
-    const presets = {
-        'Every Hour': '0 * * * *',
-        'Daily 2AM': '0 2 * * *',
-        'Weekly': '0 2 * * 0',
-        'Monthly': '0 2 1 * *'
-    };
-
-    presetButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const presetName = button.textContent;
-            const cronExpression = presets[presetName];
-
-            if (cronExpression) {
-                cronInput.value = cronExpression;
-
-                // Update hint text
-                const hint = cronInput.nextElementSibling;
-                if (hint && hint.classList.contains('form-hint')) {
-                    hint.textContent = getPresetDescription(presetName);
-                }
-
-                // Visual feedback
-                button.style.background = 'var(--accent-cyan-dim)';
-                button.style.color = 'var(--accent-cyan)';
-                button.style.borderColor = 'var(--accent-cyan)';
-
-                setTimeout(() => {
-                    button.style.background = '';
-                    button.style.color = '';
-                    button.style.borderColor = '';
-                }, 1000);
-            }
-        });
-    });
-}
-
-function getPresetDescription(presetName) {
-    const descriptions = {
-        'Every Hour': 'Runs at the start of every hour',
-        'Daily 2AM': 'Runs every day at 2:00 AM',
-        'Weekly': 'Runs every Sunday at 2:00 AM',
-        'Monthly': 'Runs on the 1st of every month at 2:00 AM'
-    };
-    return descriptions[presetName] || '';
-}
-
-// ============================================
 // Dashboard Button Interactions
 // ============================================
 
@@ -725,49 +678,6 @@ function showNotification(message, type = 'info') {
             document.body.removeChild(notification);
         }, 300);
     }, 3000);
-}
-
-// ============================================
-// Sync Task Action Buttons
-// ============================================
-
-function initSyncTaskActions() {
-    const actionButtons = document.querySelectorAll('.backup-table .action-btn');
-
-    actionButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const title = button.getAttribute('title');
-            const row = button.closest('tr');
-            const taskName = row.querySelector('.task-name span').textContent;
-
-            // Handle different actions
-            if (title.includes('Sync') || title.includes('Retry')) {
-                showNotification(`Starting sync: ${taskName}`, 'info');
-            } else if (title.includes('Pause') || title.includes('Stop')) {
-                showNotification(`Pausing task: ${taskName}`, 'info');
-            } else if (title.includes('Configure')) {
-                const taskNav = document.querySelector('a[href="#tasks"]');
-                if (taskNav) taskNav.click();
-                showNotification(`Editing: ${taskName}`, 'info');
-            } else if (title.includes('Delete')) {
-                if (confirm(`Are you sure you want to delete "${taskName}"?`)) {
-                    row.style.opacity = '0';
-                    row.style.transform = 'translateX(-20px)';
-                    setTimeout(() => row.remove(), 300);
-                    showNotification(`Deleted: ${taskName}`, 'success');
-                }
-            } else if (title.includes('Logs') || title.includes('Progress')) {
-                const diagNav = document.querySelector('a[href="#diagnostics"]');
-                if (diagNav) diagNav.click();
-                showNotification(`Viewing logs: ${taskName}`, 'info');
-            }
-
-            // Visual feedback
-            button.style.transform = 'scale(0.9)';
-            setTimeout(() => button.style.transform = '', 150);
-        });
-    });
 }
 
 // ============================================
@@ -1151,7 +1061,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 dest_platform: destPlatform,
                 dest_url: destUrl,
                 cron_expression: document.getElementById('cronExpression').value,
-                retry_count: parseInt(document.getElementById('retryCount').value)
+                retry_count: parseInt(document.getElementById('retryCount').value || '3')
             };
 
             await createBackupTask(taskData);
@@ -1196,7 +1106,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 dest_platform: editDestPlatform,
                 dest_url: editDestUrl,
                 cron_expression: document.getElementById('editCronExpression').value,
-                retry_count: parseInt(document.getElementById('editRetryCount').value)
+                retry_count: parseInt(document.getElementById('editRetryCount').value || '3')
             };
 
             await updateBackupTask(taskId, taskData);
