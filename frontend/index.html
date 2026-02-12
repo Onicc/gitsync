@@ -28,9 +28,9 @@
                     <span class="nav-icon">▣</span>
                     <span class="nav-label">Dashboard</span>
                 </a>
-                <a href="#backup-pairs" class="nav-item">
+                <a href="#sync-tasks" class="nav-item">
                     <span class="nav-icon">⇄</span>
-                    <span class="nav-label">Backup Pairs</span>
+                    <span class="nav-label">Sync Tasks</span>
                 </a>
                 <a href="#credentials" class="nav-item">
                     <span class="nav-icon">🔑</span>
@@ -124,18 +124,18 @@
                 </div>
             </section>
 
-            <!-- Backup Pairs View -->
-            <section id="backup-pairs" class="view-section">
+            <!-- Sync Tasks View -->
+            <section id="sync-tasks" class="view-section">
                 <header class="section-header">
                     <div class="header-title">
-                        <h2>Backup Pairs</h2>
+                        <h2>Sync Tasks</h2>
                         <span class="header-subtitle">Manage repository synchronization tasks</span>
                     </div>
                     <div class="header-actions">
                         <button class="btn-secondary" onclick="exportBackupConfig()">
                             <span>↓</span> Export Config
                         </button>
-                        <button class="btn-primary" onclick="showAddBackupPairModal()">
+                        <button class="btn-primary" onclick="showAddSyncTaskModal()">
                             <span>+</span> Add Pair
                         </button>
                     </div>
@@ -345,15 +345,15 @@ Exit code: 128</code></pre>
         </main>
     </div>
 
-    <!-- Edit Backup Pair Modal -->
-    <div id="editBackupPairModal" class="modal">
+    <!-- Edit Sync Task Modal -->
+    <div id="editSyncTaskModal" class="modal">
         <div class="modal-overlay"></div>
         <div class="modal-content modal-large">
             <div class="modal-header">
-                <h2 class="modal-title">Edit Backup Pair</h2>
-                <button class="modal-close" onclick="closeEditBackupPairModal()">✕</button>
+                <h2 class="modal-title">Edit Sync Task</h2>
+                <button class="modal-close" onclick="closeEditSyncTaskModal()">✕</button>
             </div>
-            <form id="editBackupPairForm" class="modal-body">
+            <form id="editSyncTaskForm" class="modal-body">
                 <input type="hidden" id="editTaskId">
 
                 <!-- Basic Information -->
@@ -469,22 +469,22 @@ Exit code: 128</code></pre>
                 </div>
 
                 <div class="modal-actions">
-                    <button type="button" class="btn-secondary" onclick="closeEditBackupPairModal()">Cancel</button>
-                    <button type="submit" class="btn-primary">Update Backup Pair</button>
+                    <button type="button" class="btn-secondary" onclick="closeEditSyncTaskModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Update Sync Task</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Add Backup Pair Modal -->
-    <div id="addBackupPairModal" class="modal">
+    <!-- Add Sync Task Modal -->
+    <div id="addSyncTaskModal" class="modal">
         <div class="modal-overlay"></div>
         <div class="modal-content modal-large">
             <div class="modal-header">
-                <h2 class="modal-title">Add Backup Pair</h2>
-                <button class="modal-close" onclick="closeAddBackupPairModal()">✕</button>
+                <h2 class="modal-title">Add Sync Task</h2>
+                <button class="modal-close" onclick="closeAddSyncTaskModal()">✕</button>
             </div>
-            <form id="addBackupPairForm" class="modal-body">
+            <form id="addSyncTaskForm" class="modal-body">
                 <!-- Basic Information -->
                 <div class="form-section-compact">
                     <h3 class="form-section-title">Basic Information</h3>
@@ -598,8 +598,8 @@ Exit code: 128</code></pre>
                 </div>
 
                 <div class="modal-actions">
-                    <button type="button" class="btn-secondary" onclick="closeAddBackupPairModal()">Cancel</button>
-                    <button type="submit" class="btn-primary">Create Backup Pair</button>
+                    <button type="button" class="btn-secondary" onclick="closeAddSyncTaskModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Create Sync Task</button>
                 </div>
             </form>
         </div>
@@ -657,21 +657,21 @@ Exit code: 128</code></pre>
         </div>
     </div>
 
-    <!-- Delete Backup Pair Confirmation Modal -->
-    <div id="deleteBackupPairModal" class="modal">
+    <!-- Delete Sync Task Confirmation Modal -->
+    <div id="deleteSyncTaskModal" class="modal">
         <div class="modal-overlay"></div>
         <div class="modal-content modal-confirm">
             <div class="modal-header modal-header-danger">
                 <div class="modal-icon-danger">⚠</div>
-                <h2 class="modal-title">Delete Backup Pair</h2>
-                <button class="modal-close" onclick="closeDeleteBackupPairModal()">✕</button>
+                <h2 class="modal-title">Delete Sync Task</h2>
+                <button class="modal-close" onclick="closeDeleteSyncTaskModal()">✕</button>
             </div>
             <div class="modal-body">
-                <p class="confirm-message">Are you sure you want to delete this backup pair?</p>
+                <p class="confirm-message">Are you sure you want to delete this sync task?</p>
                 <p class="confirm-warning">This action cannot be undone. The scheduled backup task will be permanently removed.</p>
                 <div class="modal-actions">
-                    <button type="button" class="btn-secondary" onclick="closeDeleteBackupPairModal()">Cancel</button>
-                    <button type="button" class="btn-danger" onclick="confirmDeleteBackupPair()">Delete Backup Pair</button>
+                    <button type="button" class="btn-secondary" onclick="closeDeleteSyncTaskModal()">Cancel</button>
+                    <button type="button" class="btn-danger" onclick="confirmDeleteSyncTask()">Delete Sync Task</button>
                 </div>
             </div>
         </div>

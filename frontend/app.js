@@ -12,13 +12,13 @@ document.addEventListener('DOMContentLoaded', () => {
     initFormPresets();
     initDashboardButtons();
     initStatCards();
-    initBackupPairActions();
+    initSyncTaskActions();
     initActivityControls();
     initCredentials();
     initDiagnostics();
     initFormValidation();
     loadDashboardData();
-    loadBackupPairs();
+    loadSyncTasks();
 });
 
 // ============================================
@@ -63,16 +63,16 @@ function updateDashboardStats(stats) {
     if (statCards[3]) statCards[3].querySelector('.stat-value').textContent = stats.scheduled;
 }
 
-async function loadBackupPairs() {
+async function loadSyncTasks() {
     try {
         const tasks = await fetchAPI('/tasks/');
-        renderBackupPairs(tasks);
+        renderSyncTasks(tasks);
     } catch (error) {
-        console.error('Failed to load backup pairs:', error);
+        console.error('Failed to load sync tasks:', error);
     }
 }
 
-function renderBackupPairs(tasks) {
+function renderSyncTasks(tasks) {
     const tbody = document.querySelector('.backup-table tbody');
     if (!tbody) return;
 
@@ -125,7 +125,7 @@ function startStatusPolling(taskId) {
 
     // Poll every 2 seconds
     statusPollingInterval = setInterval(async () => {
-        await loadBackupPairs();
+        await loadSyncTasks();
         await loadDashboardData();
         await loadActivityLogs();
 
@@ -152,7 +152,7 @@ async function pauseTask(taskId) {
     try {
         await fetchAPI(`/tasks/${taskId}/pause`, { method: 'POST' });
         showNotification('Task paused', 'success');
-        setTimeout(loadBackupPairs, 500);
+        setTimeout(loadSyncTasks, 500);
     } catch (error) {
         showNotification('Failed to pause task', 'error');
     }
@@ -163,24 +163,24 @@ async function deleteTask(taskId) {
     window.taskToDelete = taskId;
 
     // Show custom confirmation modal
-    const modal = document.getElementById('deleteBackupPairModal');
+    const modal = document.getElementById('deleteSyncTaskModal');
     modal.classList.add('active');
 }
 
-function closeDeleteBackupPairModal() {
-    const modal = document.getElementById('deleteBackupPairModal');
+function closeDeleteSyncTaskModal() {
+    const modal = document.getElementById('deleteSyncTaskModal');
     modal.classList.remove('active');
     window.taskToDelete = null;
 }
 
-async function confirmDeleteBackupPair() {
+async function confirmDeleteSyncTask() {
     if (!window.taskToDelete) return;
 
     try {
         await fetchAPI(`/tasks/${window.taskToDelete}`, { method: 'DELETE' });
         showNotification('Task deleted', 'success');
-        closeDeleteBackupPairModal();
-        setTimeout(loadBackupPairs, 500);
+        closeDeleteSyncTaskModal();
+        setTimeout(loadSyncTasks, 500);
     } catch (error) {
         showNotification('Failed to delete task', 'error');
     }
@@ -192,10 +192,10 @@ async function createBackupTask(taskData) {
             method: 'POST',
             body: JSON.stringify(taskData)
         });
-        showNotification('Backup pair created successfully', 'success');
-        setTimeout(loadBackupPairs, 500);
+        showNotification('Sync task created successfully', 'success');
+        setTimeout(loadSyncTasks, 500);
     } catch (error) {
-        showNotification('Failed to create backup pair', 'error');
+        showNotification('Failed to create sync task', 'error');
         console.error('Task creation failed:', error);
     }
 }
@@ -206,10 +206,10 @@ async function updateBackupTask(taskId, taskData) {
             method: 'PUT',
             body: JSON.stringify(taskData)
         });
-        showNotification('Backup pair updated successfully', 'success');
-        setTimeout(loadBackupPairs, 500);
+        showNotification('Sync task updated successfully', 'success');
+        setTimeout(loadSyncTasks, 500);
     } catch (error) {
-        showNotification('Failed to update backup pair', 'error');
+        showNotification('Failed to update sync task', 'error');
         console.error('Task update failed:', error);
     }
 }
@@ -235,7 +235,7 @@ async function loadTaskForEdit(taskId) {
         document.getElementById('editRetryCount').value = task.retry_count;
 
         // Show modal
-        const modal = document.getElementById('editBackupPairModal');
+        const modal = document.getElementById('editSyncTaskModal');
         modal.classList.add('active');
 
         // Focus first input
@@ -259,7 +259,7 @@ async function exportBackupConfig() {
         const config = {
             version: '1.0',
             exported_at: new Date().toISOString(),
-            backup_pairs: tasks
+            sync_tasks: tasks
         };
 
         const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
@@ -324,7 +324,7 @@ async function clearAllLogs() {
 // ============================================
 
 function initFormValidation() {
-    // Add Backup Pair Form
+    // Add Sync Task Form
     const destPlatform = document.getElementById('destPlatform');
     const destAuthGroup = document.getElementById('destAuthGroup');
     const sourceAuth = document.getElementById('sourceAuth');
@@ -356,7 +356,7 @@ function initFormValidation() {
         });
     }
 
-    // Edit Backup Pair Form
+    // Edit Sync Task Form
     const editDestPlatform = document.getElementById('editDestPlatform');
     const editDestAuthGroup = document.getElementById('editDestAuthGroup');
     const editSourceAuth = document.getElementById('editSourceAuth');
@@ -653,10 +653,10 @@ function initStatCards() {
             else if (card.classList.contains('failed')) filterType = 'failed';
             else if (card.classList.contains('neutral')) filterType = 'scheduled';
 
-            // Navigate to backup pairs with filter
-            const backupPairsNav = document.querySelector('a[href="#backup-pairs"]');
-            if (backupPairsNav) {
-                backupPairsNav.click();
+            // Navigate to sync tasks with filter
+            const syncTasksNav = document.querySelector('a[href="#sync-tasks"]');
+            if (syncTasksNav) {
+                syncTasksNav.click();
                 showNotification(`Filtering by: ${filterType}`, 'info');
             }
 
@@ -713,10 +713,10 @@ function showNotification(message, type = 'info') {
 }
 
 // ============================================
-// Backup Pair Action Buttons
+// Sync Task Action Buttons
 // ============================================
 
-function initBackupPairActions() {
+function initSyncTaskActions() {
     const actionButtons = document.querySelectorAll('.backup-table .action-btn');
 
     actionButtons.forEach(button => {
@@ -1004,15 +1004,15 @@ function closeAddTokenModal() {
 }
 
 // ============================================
-// Add Backup Pair Modal Functions
+// Add Sync Task Modal Functions
 // ============================================
 
-function showAddBackupPairModal() {
-    const modal = document.getElementById('addBackupPairModal');
+function showAddSyncTaskModal() {
+    const modal = document.getElementById('addSyncTaskModal');
     modal.classList.add('active');
 
     // Reset form
-    document.getElementById('addBackupPairForm').reset();
+    document.getElementById('addSyncTaskForm').reset();
 
     // Focus first input
     setTimeout(() => {
@@ -1020,13 +1020,13 @@ function showAddBackupPairModal() {
     }, 100);
 }
 
-function closeAddBackupPairModal() {
-    const modal = document.getElementById('addBackupPairModal');
+function closeAddSyncTaskModal() {
+    const modal = document.getElementById('addSyncTaskModal');
     modal.classList.remove('active');
 }
 
-function closeEditBackupPairModal() {
-    const modal = document.getElementById('editBackupPairModal');
+function closeEditSyncTaskModal() {
+    const modal = document.getElementById('editSyncTaskModal');
     modal.classList.remove('active');
 }
 
@@ -1100,10 +1100,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Handle Add Backup Pair form submission
-    const backupPairForm = document.getElementById('addBackupPairForm');
-    if (backupPairForm) {
-        backupPairForm.addEventListener('submit', async (e) => {
+    // Handle Add Sync Task form submission
+    const syncTaskForm = document.getElementById('addSyncTaskForm');
+    if (syncTaskForm) {
+        syncTaskForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const sourceAuth = document.getElementById('sourceAuth').value;
@@ -1140,14 +1140,14 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             await createBackupTask(taskData);
-            closeAddBackupPairModal();
+            closeAddSyncTaskModal();
         });
     }
 
-    // Handle Edit Backup Pair form submission
-    const editBackupPairForm = document.getElementById('editBackupPairForm');
-    if (editBackupPairForm) {
-        editBackupPairForm.addEventListener('submit', async (e) => {
+    // Handle Edit Sync Task form submission
+    const editSyncTaskForm = document.getElementById('editSyncTaskForm');
+    if (editSyncTaskForm) {
+        editSyncTaskForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
             const editSourceAuth = document.getElementById('editSourceAuth').value;
@@ -1185,7 +1185,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             await updateBackupTask(taskId, taskData);
-            closeEditBackupPairModal();
+            closeEditSyncTaskModal();
         });
     }
 
@@ -1206,17 +1206,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (tokenModal && tokenModal.classList.contains('active')) {
                 closeAddTokenModal();
             }
-            const backupPairModal = document.getElementById('addBackupPairModal');
-            if (backupPairModal && backupPairModal.classList.contains('active')) {
-                closeAddBackupPairModal();
+            const syncTaskModal = document.getElementById('addSyncTaskModal');
+            if (syncTaskModal && syncTaskModal.classList.contains('active')) {
+                closeAddSyncTaskModal();
             }
-            const editBackupPairModal = document.getElementById('editBackupPairModal');
-            if (editBackupPairModal && editBackupPairModal.classList.contains('active')) {
-                closeEditBackupPairModal();
+            const editSyncTaskModal = document.getElementById('editSyncTaskModal');
+            if (editSyncTaskModal && editSyncTaskModal.classList.contains('active')) {
+                closeEditSyncTaskModal();
             }
-            const deleteBackupPairModal = document.getElementById('deleteBackupPairModal');
-            if (deleteBackupPairModal && deleteBackupPairModal.classList.contains('active')) {
-                closeDeleteBackupPairModal();
+            const deleteSyncTaskModal = document.getElementById('deleteSyncTaskModal');
+            if (deleteSyncTaskModal && deleteSyncTaskModal.classList.contains('active')) {
+                closeDeleteSyncTaskModal();
             }
             const deleteModal = document.getElementById('deleteConfirmModal');
             if (deleteModal && deleteModal.classList.contains('active')) {
@@ -1225,32 +1225,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Close Backup Pair modal on overlay click
-    const backupPairModal = document.getElementById('addBackupPairModal');
-    if (backupPairModal) {
-        backupPairModal.addEventListener('click', (e) => {
-            if (e.target === backupPairModal || e.target.classList.contains('modal-overlay')) {
-                closeAddBackupPairModal();
+    // Close Sync Task modal on overlay click
+    const syncTaskModal = document.getElementById('addSyncTaskModal');
+    if (syncTaskModal) {
+        syncTaskModal.addEventListener('click', (e) => {
+            if (e.target === syncTaskModal || e.target.classList.contains('modal-overlay')) {
+                closeAddSyncTaskModal();
             }
         });
     }
 
-    // Close Edit Backup Pair modal on overlay click
-    const editBackupPairModal = document.getElementById('editBackupPairModal');
-    if (editBackupPairModal) {
-        editBackupPairModal.addEventListener('click', (e) => {
-            if (e.target === editBackupPairModal || e.target.classList.contains('modal-overlay')) {
-                closeEditBackupPairModal();
+    // Close Edit Sync Task modal on overlay click
+    const editSyncTaskModal = document.getElementById('editSyncTaskModal');
+    if (editSyncTaskModal) {
+        editSyncTaskModal.addEventListener('click', (e) => {
+            if (e.target === editSyncTaskModal || e.target.classList.contains('modal-overlay')) {
+                closeEditSyncTaskModal();
             }
         });
     }
 
-    // Close Delete Backup Pair modal on overlay click
-    const deleteBackupPairModal = document.getElementById('deleteBackupPairModal');
-    if (deleteBackupPairModal) {
-        deleteBackupPairModal.addEventListener('click', (e) => {
-            if (e.target === deleteBackupPairModal || e.target.classList.contains('modal-overlay')) {
-                closeDeleteBackupPairModal();
+    // Close Delete Sync Task modal on overlay click
+    const deleteSyncTaskModal = document.getElementById('deleteSyncTaskModal');
+    if (deleteSyncTaskModal) {
+        deleteSyncTaskModal.addEventListener('click', (e) => {
+            if (e.target === deleteSyncTaskModal || e.target.classList.contains('modal-overlay')) {
+                closeDeleteSyncTaskModal();
             }
         });
     }

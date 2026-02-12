@@ -302,13 +302,13 @@ Personal Access Tokens are required for HTTPS URLs.
 
 ### 3. Creating Backup Tasks
 
-#### Step 1: Navigate to Backup Pairs
+#### Step 1: Navigate to Sync Tasks
 
-Click on **Backup Pairs** in the sidebar.
+Click on **Sync Tasks** in the sidebar.
 
-#### Step 2: Add New Backup Pair
+#### Step 2: Add New Sync Task
 
-Click the **Add Backup Pair** button.
+Click the **Add Sync Task** button.
 
 #### Step 3: Configure Source
 
