@@ -2,7 +2,31 @@
 
 🚀 Professional Git Repository Backup and Synchronization System
 
+[![Docker Hub](https://img.shields.io/docker/v/onicc/gitsync?label=Docker%20Hub&logo=docker)](https://hub.docker.com/r/onicc/gitsync)
+[![Docker Pulls](https://img.shields.io/docker/pulls/onicc/gitsync)](https://hub.docker.com/r/onicc/gitsync)
+
 A powerful, self-hosted solution for automated Git repository backups across GitHub, GitLab, Gitee, and local storage.
+
+## 🚀 Quick Start
+
+```bash
+# Pull and run with Docker
+docker pull onicc/gitsync:latest
+
+# Create required directories
+mkdir -p data backups docker_ssh
+
+# Run the container
+docker run -d \
+  --name gitsync \
+  -p 8080:8080 \
+  -v $(pwd)/data:/app/database \
+  -v $(pwd)/backups:/backups \
+  -v $(pwd)/docker_ssh:/root/.ssh \
+  onicc/gitsync:latest
+
+# Access at http://localhost:8080
+```
 
 ## ✨ Features
 
@@ -41,15 +65,66 @@ A powerful, self-hosted solution for automated Git repository backups across Git
 
 ## 🚀 Installation
 
-### Option 1: Docker Deployment (Recommended)
+### Option 1: Docker Hub (Recommended)
 
-Docker deployment provides isolated environment with automatic dependency management.
+The easiest way to deploy GitSync is using the pre-built image from Docker Hub.
+
+#### Step 1: Pull the Image
+
+```bash
+docker pull onicc/gitsync:latest
+```
+
+#### Step 2: Create Required Directories
+
+```bash
+mkdir -p data backups docker_ssh
+```
+
+#### Step 3: Create docker-compose.yml
+
+Create a `docker-compose.yml` file:
+
+```yaml
+name: gitsync
+
+services:
+  gitsync:
+    image: onicc/gitsync:latest
+    container_name: gitsync
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/database
+      - ./backups:/backups
+      - ./docker_ssh:/root/.ssh
+    environment:
+      - DATABASE_URL=sqlite:////app/database/git_backup.db
+      - ENCRYPT_KEY=${ENCRYPT_KEY:-your_secret_key_here}
+    restart: unless-stopped
+```
+
+#### Step 4: Start the Application
+
+```bash
+docker-compose up -d
+```
+
+#### Step 5: Access the Application
+
+Open your browser and navigate to: **http://localhost:8080**
+
+---
+
+### Option 2: Build from Source
+
+If you want to build the Docker image from source:
 
 #### Step 1: Clone the Repository
 
 ```bash
 git clone https://github.com/Onicc/gitsync.git
-cd git-backup
+cd gitsync
 ```
 
 #### Step 2: Create Required Directories
@@ -105,7 +180,7 @@ docker-compose up -d --build
 docker ps | grep gitsync
 ```
 
-### Option 2: Local Development
+### Option 3: Local Development
 
 Local deployment gives you more control and easier debugging.
 
@@ -113,7 +188,7 @@ Local deployment gives you more control and easier debugging.
 
 ```bash
 git clone https://github.com/Onicc/gitsync.git
-cd git-backup
+cd gitsync
 ```
 
 #### Step 2: Create Virtual Environment
