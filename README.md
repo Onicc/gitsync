@@ -609,6 +609,3 @@ For issues and questions:
 - GitPython for Git operations
 - All contributors and users of this project
 
----
-
-Made with ❤️ by the GitSync team
