@@ -45,22 +45,22 @@ docker run -d \
 ### Dashboard
 Real-time monitoring with system statistics and live activity stream.
 
-![Dashboard](docs/screenshots/dashboard.png)
+![Dashboard](https://raw.githubusercontent.com/Onicc/gitsync/main/docs/screenshots/dashboard.png)
 
 ### Sync Tasks
 Manage all your backup tasks with intuitive controls.
 
-![Sync Tasks](docs/screenshots/sync-tasks.png)
+![Sync Tasks](https://raw.githubusercontent.com/Onicc/gitsync/main/docs/screenshots/sync-tasks.png)
 
 ### Credentials Management
 Secure SSH key and access token management.
 
-![Credentials](docs/screenshots/credentials.png)
+![Credentials](https://raw.githubusercontent.com/Onicc/gitsync/main/docs/screenshots/credentials.png)
 
 ### Diagnostics
 Detailed error logs and troubleshooting information.
 
-![Diagnostics](docs/screenshots/diagnostics.png)
+![Diagnostics](https://raw.githubusercontent.com/Onicc/gitsync/main/docs/screenshots/diagnostics.png)
 
 ## 🏗️ Architecture
 
