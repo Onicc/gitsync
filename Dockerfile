@@ -29,7 +29,7 @@ EXPOSE 8080
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
-ENV DATABASE_URL=sqlite:///./database/git_backup.db
+ENV DATABASE_URL=sqlite:////app/database/git_backup.db
 
 # Change to backend directory for proper imports
 WORKDIR /app/backend
