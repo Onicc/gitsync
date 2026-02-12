@@ -58,7 +58,7 @@ async function loadDashboardData() {
 function updateDashboardStats(stats) {
     const statCards = document.querySelectorAll('.stat-card');
     if (statCards[0]) statCards[0].querySelector('.stat-value').textContent = stats.successful;
-    if (statCards[1]) statCards[1].querySelector('.stat-value').textContent = stats.running;
+    if (statCards[1]) statCards[1].querySelector('.stat-value').textContent = stats.paused;
     if (statCards[2]) statCards[2].querySelector('.stat-value').textContent = stats.failed;
     if (statCards[3]) statCards[3].querySelector('.stat-value').textContent = stats.scheduled;
 }
@@ -552,7 +552,9 @@ function getStatusLabel(status) {
         'success': 'OK',
         'running': 'RUN',
         'failed': 'ERR',
-        'info': 'INFO'
+        'info': 'INFO',
+        'paused': 'OK',
+        'pending': 'OK'
     };
     return labels[status] || 'LOG';
 }

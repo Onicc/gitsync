@@ -12,7 +12,7 @@ router = APIRouter(prefix="/api/stats", tags=["statistics"])
 class DashboardStats(BaseModel):
     total_tasks: int
     successful: int
-    running: int
+    paused: int
     failed: int
     scheduled: int
 
@@ -23,8 +23,8 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
     successful = db.query(BackupTask).filter(
         BackupTask.status == TaskStatus.SUCCESS
     ).count()
-    running = db.query(BackupTask).filter(
-        BackupTask.status == TaskStatus.RUNNING
+    paused = db.query(BackupTask).filter(
+        BackupTask.status == TaskStatus.PAUSED
     ).count()
     failed = db.query(BackupTask).filter(
         BackupTask.status == TaskStatus.FAILED
@@ -37,7 +37,7 @@ def get_dashboard_stats(db: Session = Depends(get_db)):
     return DashboardStats(
         total_tasks=total,
         successful=successful,
-        running=running,
+        paused=paused,
         failed=failed,
         scheduled=scheduled
     )

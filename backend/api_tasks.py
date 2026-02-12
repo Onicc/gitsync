@@ -169,7 +169,7 @@ def execute_sync_task(task_id: int):
         else:
             task.status = TaskStatus.FAILED
             log.status = TaskStatus.FAILED
-            log.message = "Sync failed"
+            log.message = f"Sync failed: {task.source_url} → {task.dest_url}"
             log.error_output = message
 
         log.completed_at = datetime.now()
@@ -193,6 +193,16 @@ def pause_task(task_id: int, db: Session = Depends(get_db)):
     task.status = TaskStatus.PAUSED
     db.commit()
 
+    # Create log entry
+    log = TaskLog(
+        task_id=task.id,
+        status=TaskStatus.PAUSED,
+        message=f"Task paused: {task.source_url} → {task.dest_url}",
+        started_at=datetime.now()
+    )
+    db.add(log)
+    db.commit()
+
     # Remove task from scheduler
     if scheduler:
         scheduler.unschedule_task(task_id)
@@ -208,6 +218,16 @@ def resume_task(task_id: int, db: Session = Depends(get_db)):
 
     task.enabled = True
     task.status = TaskStatus.PENDING
+    db.commit()
+
+    # Create log entry
+    log = TaskLog(
+        task_id=task.id,
+        status=TaskStatus.PENDING,
+        message=f"Task resumed: {task.source_url} → {task.dest_url}",
+        started_at=datetime.now()
+    )
+    db.add(log)
     db.commit()
 
     # Add task back to scheduler

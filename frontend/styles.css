@@ -487,6 +487,16 @@ body {
     color: var(--accent-cyan);
 }
 
+.log-entry.paused .log-status {
+    background: var(--status-success-dim);
+    color: var(--status-success);
+}
+
+.log-entry.pending .log-status {
+    background: var(--status-success-dim);
+    color: var(--status-success);
+}
+
 .log-message {
     color: var(--text-secondary);
     line-height: 1.5;

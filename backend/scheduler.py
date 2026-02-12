@@ -110,7 +110,7 @@ class TaskScheduler:
             else:
                 task.status = TaskStatus.FAILED
                 log.status = TaskStatus.FAILED
-                log.message = "Sync failed"
+                log.message = f"Sync failed: {task.source_url} → {task.dest_url}"
                 log.error_output = message
 
             log.completed_at = datetime.now()
