@@ -131,7 +131,7 @@ def execute_sync_task(task_id: int):
 
         # Update status to running
         task.status = TaskStatus.RUNNING
-        task.last_run = datetime.utcnow()
+        task.last_run = datetime.now()
         db.commit()
 
         # Create log entry
@@ -139,7 +139,7 @@ def execute_sync_task(task_id: int):
             task_id=task.id,
             status=TaskStatus.RUNNING,
             message=f"Manual sync: {task.source_url} → {task.dest_url}",
-            started_at=datetime.utcnow()
+            started_at=datetime.now()
         )
         db.add(log)
         db.commit()
@@ -155,7 +155,7 @@ def execute_sync_task(task_id: int):
         # Update status
         if success:
             task.status = TaskStatus.SUCCESS
-            task.last_success = datetime.utcnow()
+            task.last_success = datetime.now()
             log.status = TaskStatus.SUCCESS
             log.message = message
         else:
@@ -164,7 +164,7 @@ def execute_sync_task(task_id: int):
             log.message = "Sync failed"
             log.error_output = message
 
-        log.completed_at = datetime.utcnow()
+        log.completed_at = datetime.now()
         db.commit()
 
     except Exception as e:

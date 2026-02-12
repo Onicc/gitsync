@@ -46,8 +46,8 @@ class BackupTask(Base):
     current_retry = Column(Integer, default=0)
 
     # Metadata
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
 
 class TaskLog(Base):
     __tablename__ = "task_logs"
@@ -57,7 +57,7 @@ class TaskLog(Base):
     status = Column(Enum(TaskStatus), nullable=False)
     message = Column(Text, nullable=False)
     error_output = Column(Text, nullable=True)
-    started_at = Column(DateTime, default=datetime.utcnow)
+    started_at = Column(DateTime, default=datetime.now)
     completed_at = Column(DateTime, nullable=True)
 
 class Credential(Base):
@@ -70,4 +70,4 @@ class Credential(Base):
     user_id = Column(String(255), nullable=True, index=True)  # GitHub/GitLab/Gitee username
     encrypted_value = Column(Text, nullable=False)
     scopes = Column(String(500), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)

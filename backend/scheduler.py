@@ -72,7 +72,7 @@ class TaskScheduler:
 
             # Update task status to running
             task.status = TaskStatus.RUNNING
-            task.last_run = datetime.utcnow()
+            task.last_run = datetime.now()
             task.current_retry = 0
             db.commit()
 
@@ -81,7 +81,7 @@ class TaskScheduler:
                 task_id=task.id,
                 status=TaskStatus.RUNNING,
                 message=f"Starting sync: {task.source_url} → {task.dest_url}",
-                started_at=datetime.utcnow()
+                started_at=datetime.now()
             )
             db.add(log)
             db.commit()
@@ -97,7 +97,7 @@ class TaskScheduler:
             # Update task status
             if success:
                 task.status = TaskStatus.SUCCESS
-                task.last_success = datetime.utcnow()
+                task.last_success = datetime.now()
                 log.status = TaskStatus.SUCCESS
                 log.message = message
             else:
@@ -106,7 +106,7 @@ class TaskScheduler:
                 log.message = "Sync failed"
                 log.error_output = message
 
-            log.completed_at = datetime.utcnow()
+            log.completed_at = datetime.now()
             db.commit()
 
             logger.info(f"Task {task.name} completed: {success}")
