@@ -155,16 +155,7 @@ class GitSyncEngine:
         Returns:
             Tuple[bool, str]: (success, message/error)
         """
-        # Use timestamp to ensure unique temp directory names
-        timestamp = int(time.time())
-        temp_path = self.work_dir / f"{task_name}_{os.getpid()}_{timestamp}"
-
         try:
-            # Clean up temp directory if it already exists (from previous failed attempts)
-            if temp_path.exists():
-                logger.warning(f"Temp directory already exists, cleaning up: {temp_path}")
-                shutil.rmtree(temp_path, ignore_errors=True)
-
             # Determine authentication tokens
             source_token = auth_token
             dest_token = auth_token
@@ -179,39 +170,10 @@ class GitSyncEngine:
             env = os.environ.copy()
             env['GIT_SSH_COMMAND'] = 'ssh -o BatchMode=yes -o ConnectTimeout=30 -o StrictHostKeyChecking=accept-new'
 
-            # Step 1: Clone source as mirror with submodules
-            logger.info(f"Cloning mirror from {source_url}")
-            source_with_auth = self._inject_auth(source_url, source_token)
-
-            result = subprocess.run(
-                ["git", "clone", "--mirror", "--recurse-submodules", source_with_auth, str(temp_path)],
-                capture_output=True,
-                text=True,
-                timeout=600,
-                env=env
-            )
-
-            if result.returncode != 0:
-                error_msg = result.stderr.strip() if result.stderr else "Unknown error"
-                logger.error(f"Clone failed: {error_msg}")
-                return False, f"Clone failed: {error_msg}"
-
-            # Step 1.5: Configure git user info for this repository
-            logger.info("Configuring git user info")
-            subprocess.run(
-                ["git", "config", "--local", "user.name", "gitsync"],
-                cwd=temp_path,
-                capture_output=True
-            )
-            subprocess.run(
-                ["git", "config", "--local", "user.email", "admin@gitsync.com"],
-                cwd=temp_path,
-                capture_output=True
-            )
-
             # Check if destination is local path or remote URL
             is_local = not (dest_url.startswith("http") or dest_url.startswith("git@"))
 
+            # For local destinations, check if we can do incremental update
             if is_local:
                 dest_path = Path(dest_url)
 
@@ -252,10 +214,6 @@ class GitSyncEngine:
                             logger.error(f"Incremental update failed: {error_msg}")
                             return False, f"Incremental update failed: {error_msg}"
 
-                        # Clean up temp directory since we didn't need it
-                        if temp_path.exists():
-                            shutil.rmtree(temp_path, ignore_errors=True)
-
                         logger.info(f"Incremental update completed successfully")
                         return True, f"Successfully synced (incremental) {source_url} to {dest_url}"
 
@@ -266,20 +224,61 @@ class GitSyncEngine:
                         logger.error(f"Incremental update error: {str(e)}")
                         return False, f"Incremental update error: {str(e)}"
 
-                else:
-                    # Full clone: destination doesn't exist or is not a valid mirror
-                    logger.info(f"Performing full clone to local destination: {dest_url}")
+            # If we reach here, we need to do a full clone
+            # Use timestamp to ensure unique temp directory names
+            timestamp = int(time.time())
+            temp_path = self.work_dir / f"{task_name}_{os.getpid()}_{timestamp}"
 
-                    # Remove destination if it exists but is not a valid mirror
-                    if dest_path.exists():
-                        logger.warning(f"Removing invalid destination: {dest_path}")
-                        shutil.rmtree(dest_path, ignore_errors=True)
+            # Clean up temp directory if it already exists (from previous failed attempts)
+            if temp_path.exists():
+                logger.warning(f"Temp directory already exists, cleaning up: {temp_path}")
+                shutil.rmtree(temp_path, ignore_errors=True)
 
-                    # Move temp mirror to destination
-                    shutil.move(str(temp_path), str(dest_path))
+            # Step 1: Clone source as mirror with submodules
+            logger.info(f"Cloning mirror from {source_url}")
+            source_with_auth = self._inject_auth(source_url, source_token)
 
-                    logger.info(f"Full clone completed successfully")
-                    return True, f"Successfully synced (full clone) {source_url} to {dest_url}"
+            result = subprocess.run(
+                ["git", "clone", "--mirror", "--recurse-submodules", source_with_auth, str(temp_path)],
+                capture_output=True,
+                text=True,
+                timeout=600,
+                env=env
+            )
+
+            if result.returncode != 0:
+                error_msg = result.stderr.strip() if result.stderr else "Unknown error"
+                logger.error(f"Clone failed: {error_msg}")
+                return False, f"Clone failed: {error_msg}"
+
+            # Step 1.5: Configure git user info for this repository
+            logger.info("Configuring git user info")
+            subprocess.run(
+                ["git", "config", "--local", "user.name", "gitsync"],
+                cwd=temp_path,
+                capture_output=True
+            )
+            subprocess.run(
+                ["git", "config", "--local", "user.email", "admin@gitsync.com"],
+                cwd=temp_path,
+                capture_output=True
+            )
+
+            if is_local:
+                # Full clone to local destination
+                dest_path = Path(dest_url)
+                logger.info(f"Performing full clone to local destination: {dest_url}")
+
+                # Remove destination if it exists but is not a valid mirror
+                if dest_path.exists():
+                    logger.warning(f"Removing invalid destination: {dest_path}")
+                    shutil.rmtree(dest_path, ignore_errors=True)
+
+                # Move temp mirror to destination
+                shutil.move(str(temp_path), str(dest_path))
+
+                logger.info(f"Full clone completed successfully")
+                return True, f"Successfully synced (full clone) {source_url} to {dest_url}"
             else:
                 # Step 2: For remote destination, set push URL
                 logger.info(f"Setting push URL to {dest_url}")
