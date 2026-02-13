@@ -213,18 +213,73 @@ class GitSyncEngine:
             is_local = not (dest_url.startswith("http") or dest_url.startswith("git@"))
 
             if is_local:
-                # Step 2: For local destination, move mirror to destination path
-                logger.info(f"Moving mirror to local destination: {dest_url}")
                 dest_path = Path(dest_url)
 
-                # Remove destination if it exists
-                if dest_path.exists():
-                    shutil.rmtree(dest_path, ignore_errors=True)
+                # Check if destination already exists and is a valid Git mirror
+                if self._is_valid_git_mirror(dest_path):
+                    # Incremental update: use existing mirror and fetch updates
+                    logger.info(f"Destination exists as valid Git mirror, performing incremental update: {dest_url}")
 
-                # Move temp mirror to destination
-                shutil.move(str(temp_path), str(dest_path))
+                    try:
+                        # Update remote URL in case source changed
+                        source_with_auth = self._inject_auth(source_url, source_token)
+                        result = subprocess.run(
+                            ["git", "remote", "set-url", "origin", source_with_auth],
+                            cwd=dest_path,
+                            capture_output=True,
+                            text=True,
+                            timeout=30,
+                            env=env
+                        )
 
-                return True, f"Successfully synced {source_url} to {dest_url}"
+                        if result.returncode != 0:
+                            logger.warning(f"Failed to update remote URL: {result.stderr}")
+                            # Continue anyway, might still work with old URL
+
+                        # Fetch all updates from source (incremental)
+                        logger.info(f"Fetching updates from {source_url}")
+                        result = subprocess.run(
+                            ["git", "remote", "update", "--prune"],
+                            cwd=dest_path,
+                            capture_output=True,
+                            text=True,
+                            timeout=600,
+                            env=env
+                        )
+
+                        if result.returncode != 0:
+                            error_msg = result.stderr.strip() if result.stderr else "Unknown error"
+                            logger.error(f"Incremental update failed: {error_msg}")
+                            return False, f"Incremental update failed: {error_msg}"
+
+                        # Clean up temp directory since we didn't need it
+                        if temp_path.exists():
+                            shutil.rmtree(temp_path, ignore_errors=True)
+
+                        logger.info(f"Incremental update completed successfully")
+                        return True, f"Successfully synced (incremental) {source_url} to {dest_url}"
+
+                    except subprocess.TimeoutExpired:
+                        logger.error("Incremental update timed out")
+                        return False, "Incremental update timed out (10 minutes)"
+                    except Exception as e:
+                        logger.error(f"Incremental update error: {str(e)}")
+                        return False, f"Incremental update error: {str(e)}"
+
+                else:
+                    # Full clone: destination doesn't exist or is not a valid mirror
+                    logger.info(f"Performing full clone to local destination: {dest_url}")
+
+                    # Remove destination if it exists but is not a valid mirror
+                    if dest_path.exists():
+                        logger.warning(f"Removing invalid destination: {dest_path}")
+                        shutil.rmtree(dest_path, ignore_errors=True)
+
+                    # Move temp mirror to destination
+                    shutil.move(str(temp_path), str(dest_path))
+
+                    logger.info(f"Full clone completed successfully")
+                    return True, f"Successfully synced (full clone) {source_url} to {dest_url}"
             else:
                 # Step 2: For remote destination, set push URL
                 logger.info(f"Setting push URL to {dest_url}")
@@ -270,6 +325,41 @@ class GitSyncEngine:
             # Cleanup temp directory
             if temp_path.exists():
                 shutil.rmtree(temp_path, ignore_errors=True)
+
+    def _is_valid_git_mirror(self, path: Path) -> bool:
+        """
+        Check if the path is a valid Git mirror (bare) repository
+
+        Args:
+            path: Path to check
+
+        Returns:
+            bool: True if valid Git mirror, False otherwise
+        """
+        try:
+            if not path.exists():
+                return False
+
+            # Check if it's a bare repository (mirror)
+            # Bare repos have HEAD, config, objects, refs directly in the root
+            required_items = ['HEAD', 'config', 'objects', 'refs']
+            for item in required_items:
+                if not (path / item).exists():
+                    return False
+
+            # Verify it's actually a bare repo by checking config
+            result = subprocess.run(
+                ["git", "config", "--local", "core.bare"],
+                cwd=path,
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+
+            return result.returncode == 0 and result.stdout.strip() == "true"
+        except Exception as e:
+            logger.warning(f"Failed to check if {path} is valid Git mirror: {e}")
+            return False
 
     def _inject_auth(self, url: str, token: Optional[str]) -> str:
         """
