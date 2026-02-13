@@ -950,9 +950,14 @@ async function viewSSHKeyPublicKey(keyId) {
         const modal = document.getElementById('viewSSHKeyModal');
         modal.classList.add('active');
 
-        // Auto-copy to clipboard
-        await navigator.clipboard.writeText(result.public_key);
-        showNotification('Public key copied to clipboard', 'success');
+        // Auto-copy to clipboard (don't fail if this doesn't work)
+        try {
+            await navigator.clipboard.writeText(result.public_key);
+            showNotification('Public key copied to clipboard', 'success');
+        } catch (clipboardError) {
+            console.warn('Auto-copy to clipboard failed:', clipboardError);
+            // Don't show error notification, just log it
+        }
     } catch (error) {
         showNotification('Failed to load public key', 'error');
         console.error('Load public key error:', error);
@@ -1024,8 +1029,13 @@ async function generateSSHKeyForUser(platform, userId, name) {
         // Show public key to user
         const message = `SSH Key Generated!\n\nPublic Key:\n${result.public_key}\n\nFingerprint: ${result.fingerprint}\n\nThe public key has been copied to your clipboard.\nAdd it to your ${platform} account (@${userId}).`;
 
-        // Copy to clipboard
-        await navigator.clipboard.writeText(result.public_key);
+        // Copy to clipboard (don't fail if this doesn't work)
+        try {
+            await navigator.clipboard.writeText(result.public_key);
+        } catch (clipboardError) {
+            console.warn('Clipboard copy failed:', clipboardError);
+        }
+
         alert(message);
     } catch (error) {
         showNotification('Failed to generate SSH key', 'error');
