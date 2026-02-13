@@ -610,12 +610,13 @@ body {
     table-layout: fixed;
 }
 
-.backup-table th:nth-child(1) { width: 15%; }
-.backup-table th:nth-child(2) { width: 22%; }
-.backup-table th:nth-child(3) { width: 22%; }
-.backup-table th:nth-child(4) { width: 13%; }
-.backup-table th:nth-child(5) { width: 12%; }
-.backup-table th:nth-child(6) { width: 16%; }
+.backup-table th:nth-child(1) { width: 13%; }  /* Task Name */
+.backup-table th:nth-child(2) { width: 10%; }  /* Group */
+.backup-table th:nth-child(3) { width: 20%; }  /* Source */
+.backup-table th:nth-child(4) { width: 20%; }  /* Destination */
+.backup-table th:nth-child(5) { width: 12%; }  /* Last Success */
+.backup-table th:nth-child(6) { width: 11%; }  /* Status */
+.backup-table th:nth-child(7) { width: 14%; }  /* Actions */
 
 .backup-table thead {
     background: var(--bg-tertiary);
@@ -651,11 +652,6 @@ body {
     text-align: center;
 }
 
-.task-name .task-icon {
-    display: inline-block;
-    margin-right: var(--spacing-xs);
-}
-
 .task-name {
     max-width: 100%;
     overflow: hidden;
@@ -670,8 +666,13 @@ body {
     white-space: nowrap;
 }
 
-.task-icon {
-    font-size: 16px;
+.task-group {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-secondary);
+    font-weight: 500;
 }
 
 .repo-cell {

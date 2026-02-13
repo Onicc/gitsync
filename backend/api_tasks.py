@@ -23,7 +23,7 @@ def set_scheduler(sched):
 # Pydantic schemas
 class TaskCreate(BaseModel):
     name: str
-    icon: str = "📦"
+    group: str = "Default"
     source_platform: str
     source_url: str
     dest_platform: str
@@ -34,7 +34,7 @@ class TaskCreate(BaseModel):
 class TaskResponse(BaseModel):
     id: int
     name: str
-    icon: str
+    group: str
     source_platform: str
     source_url: str
     dest_platform: str
@@ -52,9 +52,15 @@ class TaskResponse(BaseModel):
 
 @router.get("/", response_model=List[TaskResponse])
 def get_tasks(db: Session = Depends(get_db)):
-    """Get all backup tasks"""
-    tasks = db.query(BackupTask).all()
+    """Get all backup tasks sorted by group"""
+    tasks = db.query(BackupTask).order_by(BackupTask.group, BackupTask.name).all()
     return tasks
+
+@router.get("/groups", response_model=List[str])
+def get_groups(db: Session = Depends(get_db)):
+    """Get all unique task groups"""
+    groups = db.query(BackupTask.group).distinct().order_by(BackupTask.group).all()
+    return [group[0] for group in groups]
 
 @router.post("/", response_model=TaskResponse)
 def create_task(task: TaskCreate, db: Session = Depends(get_db)):
@@ -66,7 +72,7 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
 
     db_task = BackupTask(
         name=task.name,
-        icon=task.icon,
+        group=task.group,
         source_platform=PlatformType[task.source_platform.upper()],
         source_url=task.source_url,
         dest_platform=PlatformType[task.dest_platform.upper()],
@@ -95,7 +101,7 @@ def update_task(task_id: int, task: TaskCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Task not found")
 
     db_task.name = task.name
-    db_task.icon = task.icon
+    db_task.group = task.group
     db_task.source_platform = PlatformType[task.source_platform.upper()]
     db_task.source_url = task.source_url
     db_task.dest_platform = PlatformType[task.dest_platform.upper()]

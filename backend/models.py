@@ -24,7 +24,7 @@ class BackupTask(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), unique=True, nullable=False)
-    icon = Column(String(10), default="📦")
+    group = Column(String(100), default="Default", nullable=False, index=True)
 
     # Source
     source_platform = Column(Enum(PlatformType), nullable=False)

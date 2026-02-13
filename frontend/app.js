@@ -89,13 +89,31 @@ async function loadSyncTasks() {
     }
 }
 
+async function loadGroupsForAutocomplete() {
+    try {
+        const groups = await fetchAPI('/tasks/groups');
+
+        // Update both datalists (add and edit modals)
+        const addGroupList = document.getElementById('groupList');
+        const editGroupList = document.getElementById('editGroupList');
+
+        const optionsHTML = groups.map(group => `<option value="${group}">`).join('');
+
+        if (addGroupList) addGroupList.innerHTML = optionsHTML;
+        if (editGroupList) editGroupList.innerHTML = optionsHTML;
+    } catch (error) {
+        console.error('Failed to load groups:', error);
+    }
+}
+
 function renderSyncTasks(tasks) {
     const tbody = document.querySelector('.backup-table tbody');
     if (!tbody) return;
 
     tbody.innerHTML = tasks.map(task => `
         <tr data-task-id="${task.id}">
-            <td class="task-name"><div class="task-icon">${task.icon}</div><span>${task.name}</span></td>
+            <td class="task-name"><span>${task.name}</span></td>
+            <td class="task-group">${task.group || 'Default'}</td>
             <td class="repo-cell"><div class="repo-platform ${task.source_platform.toLowerCase()}">${task.source_platform}</div><code>${task.source_url}</code></td>
             <td class="repo-cell"><div class="repo-platform ${task.dest_platform.toLowerCase()}">${task.dest_platform}</div><code>${task.dest_url}</code></td>
             <td class="timestamp">${task.last_success ? new Date(task.last_success).toLocaleString() : 'Never'}</td>
@@ -257,13 +275,16 @@ async function loadTaskForEdit(taskId) {
         // Populate form fields
         document.getElementById('editTaskId').value = task.id;
         document.getElementById('editTaskName').value = task.name;
-        document.getElementById('editTaskIcon').value = task.icon;
+        document.getElementById('editTaskGroup').value = task.group || 'Default';
         document.getElementById('editSourcePlatform').value = task.source_platform.toLowerCase();
         document.getElementById('editSourceUrl').value = task.source_url;
         document.getElementById('editDestPlatform').value = task.dest_platform.toLowerCase();
         document.getElementById('editDestUrl').value = task.dest_url;
         document.getElementById('editCronExpression').value = task.cron_expression;
         document.getElementById('editRetryCount').value = task.retry_count;
+
+        // Load groups for autocomplete
+        await loadGroupsForAutocomplete();
 
         // Update cron hint based on loaded expression
         updateCronHint('editCronExpression', 'editCronHint');
@@ -1125,12 +1146,87 @@ function closeAddTokenModal() {
 // Add Sync Task Modal Functions
 // ============================================
 
+// Parse Git URL to extract repository name and owner/organization
+function parseGitUrl(url) {
+    if (!url) return null;
+
+    try {
+        // SSH format: git@github.com:mesondynamics/zed-ros2-wrapper.git
+        const sshMatch = url.match(/git@[^:]+:([^/]+)\/([^/]+?)(?:\.git)?$/);
+        if (sshMatch) {
+            return {
+                owner: sshMatch[1],
+                repo: sshMatch[2].replace(/\.git$/, '')
+            };
+        }
+
+        // HTTPS format: https://github.com/mesondynamics/zed-ros2-wrapper.git
+        const httpsMatch = url.match(/https?:\/\/[^/]+\/([^/]+)\/([^/]+?)(?:\.git)?$/);
+        if (httpsMatch) {
+            return {
+                owner: httpsMatch[1],
+                repo: httpsMatch[2].replace(/\.git$/, '')
+            };
+        }
+
+        return null;
+    } catch (error) {
+        console.error('Failed to parse Git URL:', error);
+        return null;
+    }
+}
+
+// Auto-fill task name, group, and platform from source URL
+function autoFillTaskInfo() {
+    const sourceUrl = document.getElementById('sourceUrl').value;
+    const taskNameInput = document.getElementById('taskName');
+    const taskGroupInput = document.getElementById('taskGroup');
+    const sourcePlatformSelect = document.getElementById('sourcePlatform');
+
+    // Parse the URL
+    const parsed = parseGitUrl(sourceUrl);
+    if (!parsed) return;
+
+    // Auto-fill task name if empty
+    if (!taskNameInput.value) {
+        taskNameInput.value = parsed.repo;
+    }
+
+    // Auto-fill task group if empty or default value
+    if (!taskGroupInput.value || taskGroupInput.value === 'Default') {
+        taskGroupInput.value = parsed.owner;
+    }
+
+    // Auto-fill platform if not selected
+    if (!sourcePlatformSelect.value || sourcePlatformSelect.value === '') {
+        const platform = detectPlatformFromUrl(sourceUrl);
+        if (platform) {
+            sourcePlatformSelect.value = platform;
+        }
+    }
+}
+
+// Detect platform from URL
+function detectPlatformFromUrl(url) {
+    if (!url) return null;
+
+    const urlLower = url.toLowerCase();
+    if (urlLower.includes('github.com')) return 'github';
+    if (urlLower.includes('gitlab.com')) return 'gitlab';
+    if (urlLower.includes('gitee.com')) return 'gitee';
+
+    return 'custom';
+}
+
 function showAddSyncTaskModal() {
     const modal = document.getElementById('addSyncTaskModal');
     modal.classList.add('active');
 
     // Reset form
     document.getElementById('addSyncTaskForm').reset();
+
+    // Load groups for autocomplete
+    loadGroupsForAutocomplete();
 
     // Focus first input
     setTimeout(() => {
@@ -1302,7 +1398,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const taskData = {
                 name: document.getElementById('taskName').value,
-                icon: document.getElementById('taskIcon').value,
+                group: document.getElementById('taskGroup').value || 'Default',
                 source_platform: document.getElementById('sourcePlatform').value,
                 source_url: sourceUrl,
                 dest_platform: destPlatform,
@@ -1314,6 +1410,12 @@ document.addEventListener('DOMContentLoaded', () => {
             await createBackupTask(taskData);
             closeAddSyncTaskModal();
         });
+
+        // Auto-fill task name and group when source URL changes
+        const sourceUrlInput = document.getElementById('sourceUrl');
+        if (sourceUrlInput) {
+            sourceUrlInput.addEventListener('input', autoFillTaskInfo);
+        }
     }
 
     // Handle Edit Sync Task form submission
@@ -1347,7 +1449,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const taskId = document.getElementById('editTaskId').value;
             const taskData = {
                 name: document.getElementById('editTaskName').value,
-                icon: document.getElementById('editTaskIcon').value,
+                group: document.getElementById('editTaskGroup').value || 'Default',
                 source_platform: document.getElementById('editSourcePlatform').value,
                 source_url: editSourceUrl,
                 dest_platform: editDestPlatform,
