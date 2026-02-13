@@ -655,9 +655,18 @@ body {
     margin-right: var(--spacing-xs);
 }
 
+.task-name {
+    max-width: 100%;
+    overflow: hidden;
+}
+
 .task-name span {
     display: inline-block;
     vertical-align: middle;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .task-icon {
