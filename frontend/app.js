@@ -1151,21 +1151,49 @@ function parseGitUrl(url) {
     if (!url) return null;
 
     try {
+        let platform = null;
+        let owner = null;
+        let repo = null;
+
         // SSH format: git@github.com:mesondynamics/zed-ros2-wrapper.git
-        const sshMatch = url.match(/git@[^:]+:([^/]+)\/([^/]+?)(?:\.git)?$/);
+        const sshMatch = url.match(/git@([^:]+):([^/]+)\/([^/]+?)(?:\.git)?$/);
         if (sshMatch) {
+            const hostname = sshMatch[1];
+            owner = sshMatch[2];
+            repo = sshMatch[3].replace(/\.git$/, '');
+
+            // Extract platform from hostname
+            if (hostname.includes('github.com')) platform = 'github';
+            else if (hostname.includes('gitlab.com')) platform = 'gitlab';
+            else if (hostname.includes('gitee.com')) platform = 'gitee';
+            else platform = 'custom';
+
             return {
-                owner: sshMatch[1],
-                repo: sshMatch[2].replace(/\.git$/, '')
+                platform: platform,
+                owner: owner,
+                username: owner,  // alias for compatibility
+                repo: repo
             };
         }
 
         // HTTPS format: https://github.com/mesondynamics/zed-ros2-wrapper.git
-        const httpsMatch = url.match(/https?:\/\/[^/]+\/([^/]+)\/([^/]+?)(?:\.git)?$/);
+        const httpsMatch = url.match(/https?:\/\/([^/]+)\/([^/]+)\/([^/]+?)(?:\.git)?$/);
         if (httpsMatch) {
+            const hostname = httpsMatch[1];
+            owner = httpsMatch[2];
+            repo = httpsMatch[3].replace(/\.git$/, '');
+
+            // Extract platform from hostname
+            if (hostname.includes('github.com')) platform = 'github';
+            else if (hostname.includes('gitlab.com')) platform = 'gitlab';
+            else if (hostname.includes('gitee.com')) platform = 'gitee';
+            else platform = 'custom';
+
             return {
-                owner: httpsMatch[1],
-                repo: httpsMatch[2].replace(/\.git$/, '')
+                platform: platform,
+                owner: owner,
+                username: owner,  // alias for compatibility
+                repo: repo
             };
         }
 
