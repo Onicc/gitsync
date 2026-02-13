@@ -404,59 +404,6 @@ function confirmClearActivityLogs() {
 // Form Validation and Dynamic Display
 // ============================================
 
-// Parse Git URL to extract platform, username, and repo name
-function parseGitUrl(url) {
-    if (!url) return null;
-
-    let platform = 'custom';
-    let username = '';
-    let repo = '';
-
-    // SSH format: git@github.com:Onicc/Hummingbird.git
-    const sshPattern = /^git@([^:]+):([^/]+)\/(.+?)(?:\.git)?$/;
-    const sshMatch = url.match(sshPattern);
-
-    if (sshMatch) {
-        const domain = sshMatch[1];
-        username = sshMatch[2];
-        repo = sshMatch[3].replace(/\.git$/, '');
-
-        // Extract platform from domain
-        if (domain.includes('github')) platform = 'github';
-        else if (domain.includes('gitlab')) platform = 'gitlab';
-        else if (domain.includes('gitee')) platform = 'gitee';
-
-        return { platform, username, repo };
-    }
-
-    // HTTPS format: https://github.com/Onicc/Hummingbird.git
-    const httpsPattern = /^https?:\/\/([^/]+)\/([^/]+)\/(.+?)(?:\.git)?$/;
-    const httpsMatch = url.match(httpsPattern);
-
-    if (httpsMatch) {
-        const domain = httpsMatch[1];
-        username = httpsMatch[2];
-        repo = httpsMatch[3].replace(/\.git$/, '');
-
-        // Extract platform from domain
-        if (domain.includes('github')) platform = 'github';
-        else if (domain.includes('gitlab')) platform = 'gitlab';
-        else if (domain.includes('gitee')) platform = 'gitee';
-
-        return { platform, username, repo };
-    }
-
-    return null;
-}
-
-// Generate local destination path from source URL
-function generateLocalPath(sourceUrl) {
-    const parsed = parseGitUrl(sourceUrl);
-    if (!parsed) return '';
-
-    return `/backups/${parsed.platform}/${parsed.username}/${parsed.repo}`;
-}
-
 function initFormValidation() {
     // Add Sync Task Form
     const destPlatform = document.getElementById('destPlatform');
@@ -1202,6 +1149,14 @@ function parseGitUrl(url) {
         console.error('Failed to parse Git URL:', error);
         return null;
     }
+}
+
+// Generate local destination path from source URL
+function generateLocalPath(sourceUrl) {
+    const parsed = parseGitUrl(sourceUrl);
+    if (!parsed) return '';
+
+    return `/backups/${parsed.platform}/${parsed.username}/${parsed.repo}`;
 }
 
 // Auto-fill task name, group, and platform from source URL
