@@ -457,6 +457,7 @@ body {
     border-bottom: 1px solid var(--border-color);
     transition: background var(--transition-fast);
     animation: slide-in 0.3s ease;
+    align-items: center;
 }
 
 .log-entry:hover {
