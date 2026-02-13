@@ -1,5 +1,6 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy.orm import Session
 from database import SessionLocal
 from models import BackupTask, TaskStatus, TaskLog
@@ -21,6 +22,7 @@ class TaskScheduler:
         self.scheduler.start()
         logger.info("Task scheduler started")
         self.load_tasks()
+        self.schedule_cleanup_task()
 
     def stop(self):
         """Stop the scheduler"""
@@ -129,3 +131,27 @@ class TaskScheduler:
     def trigger_manual_sync(self, task_id: int):
         """Manually trigger a task sync"""
         self.execute_task(task_id)
+
+    def schedule_cleanup_task(self):
+        """Schedule periodic cleanup of temporary directories"""
+        try:
+            # Run cleanup every 30 minutes
+            trigger = IntervalTrigger(minutes=30)
+            self.scheduler.add_job(
+                self.cleanup_temp_dirs,
+                trigger=trigger,
+                id="cleanup_temp_dirs",
+                replace_existing=True
+            )
+            logger.info("Scheduled periodic temp directory cleanup (every 30 minutes)")
+        except Exception as e:
+            logger.error(f"Failed to schedule cleanup task: {e}")
+
+    def cleanup_temp_dirs(self):
+        """Clean up temporary directories older than 1 hour"""
+        try:
+            # Clean up temp directories older than 1 hour
+            self.git_engine._cleanup_old_temp_dirs(max_age_hours=1)
+            logger.info("Periodic temp directory cleanup completed")
+        except Exception as e:
+            logger.error(f"Temp directory cleanup error: {e}")

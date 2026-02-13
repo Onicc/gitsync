@@ -971,13 +971,32 @@ function closeViewSSHKeyModal() {
 }
 
 async function copySSHKey() {
-    if (window.currentSSHKey) {
-        try {
-            await navigator.clipboard.writeText(window.currentSSHKey);
-            showNotification('Public key copied to clipboard', 'success');
-        } catch (err) {
-            console.error('Failed to copy:', err);
+    if (!window.currentSSHKey) {
+        showNotification('No SSH key to copy', 'error');
+        return;
+    }
+
+    try {
+        await navigator.clipboard.writeText(window.currentSSHKey);
+        showNotification('Public key copied to clipboard', 'success');
+
+        // Visual feedback on the button
+        const copyBtn = document.querySelector('#viewSSHKeyModal .copy-btn');
+        if (copyBtn) {
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = '✓';
+            copyBtn.style.background = 'var(--status-success)';
+            copyBtn.style.color = 'var(--bg-primary)';
+
+            setTimeout(() => {
+                copyBtn.textContent = originalText;
+                copyBtn.style.background = '';
+                copyBtn.style.color = '';
+            }, 2000);
         }
+    } catch (err) {
+        console.error('Failed to copy:', err);
+        showNotification('Failed to copy to clipboard', 'error');
     }
 }
 
@@ -1023,20 +1042,17 @@ async function generateSSHKeyForUser(platform, userId, name) {
             })
         });
 
-        showNotification('SSH key generated successfully', 'success');
-        loadSSHKeys();
-
-        // Show public key to user
-        const message = `SSH Key Generated!\n\nPublic Key:\n${result.public_key}\n\nFingerprint: ${result.fingerprint}\n\nThe public key has been copied to your clipboard.\nAdd it to your ${platform} account (@${userId}).`;
-
-        // Copy to clipboard (don't fail if this doesn't work)
+        // Copy to clipboard
         try {
             await navigator.clipboard.writeText(result.public_key);
+            showNotification('SSH key generated and copied to clipboard!', 'success');
         } catch (clipboardError) {
             console.warn('Clipboard copy failed:', clipboardError);
+            showNotification('SSH key generated successfully', 'success');
         }
 
-        alert(message);
+        // Reload SSH keys list
+        loadSSHKeys();
     } catch (error) {
         showNotification('Failed to generate SSH key', 'error');
         console.error('SSH key generation failed:', error);

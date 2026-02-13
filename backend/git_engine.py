@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional, Tuple
 import logging
 import re
+import time
 from urllib.parse import urlparse
 from sqlalchemy.orm import Session
 from models import Credential, PlatformType
@@ -19,6 +20,40 @@ class GitSyncEngine:
     def __init__(self, work_dir: str = "./temp_repos"):
         self.work_dir = Path(work_dir)
         self.work_dir.mkdir(exist_ok=True)
+        # Clean up old temporary directories on initialization (older than 2 hours)
+        self._cleanup_old_temp_dirs(max_age_hours=2)
+
+    def _cleanup_old_temp_dirs(self, max_age_hours: float = 2):
+        """
+        Clean up temporary directories older than max_age_hours
+
+        Args:
+            max_age_hours: Maximum age in hours before a temp directory is considered stale
+        """
+        try:
+            if not self.work_dir.exists():
+                return
+
+            current_time = time.time()
+            max_age_seconds = max_age_hours * 3600
+            cleaned_count = 0
+
+            for item in self.work_dir.iterdir():
+                if item.is_dir():
+                    try:
+                        # Check directory age
+                        dir_age = current_time - item.stat().st_mtime
+                        if dir_age > max_age_seconds:
+                            shutil.rmtree(item, ignore_errors=True)
+                            cleaned_count += 1
+                            logger.info(f"Cleaned up old temp directory: {item.name}")
+                    except Exception as e:
+                        logger.warning(f"Failed to clean up temp directory {item.name}: {e}")
+
+            if cleaned_count > 0:
+                logger.info(f"Cleaned up {cleaned_count} old temporary directories")
+        except Exception as e:
+            logger.error(f"Error during temp directory cleanup: {e}")
 
     def _extract_user_id_from_url(self, url: str) -> Optional[str]:
         """
@@ -120,9 +155,16 @@ class GitSyncEngine:
         Returns:
             Tuple[bool, str]: (success, message/error)
         """
-        temp_path = self.work_dir / f"{task_name}_{os.getpid()}"
+        # Use timestamp to ensure unique temp directory names
+        timestamp = int(time.time())
+        temp_path = self.work_dir / f"{task_name}_{os.getpid()}_{timestamp}"
 
         try:
+            # Clean up temp directory if it already exists (from previous failed attempts)
+            if temp_path.exists():
+                logger.warning(f"Temp directory already exists, cleaning up: {temp_path}")
+                shutil.rmtree(temp_path, ignore_errors=True)
+
             # Determine authentication tokens
             source_token = auth_token
             dest_token = auth_token
@@ -133,6 +175,10 @@ class GitSyncEngine:
                 dest_token = self._find_credential(db, dest_url)
                 logger.info(f"Auto-selected credentials: source={'found' if source_token else 'none'}, dest={'found' if dest_token else 'none'}")
 
+            # Set up SSH environment to prevent hanging
+            env = os.environ.copy()
+            env['GIT_SSH_COMMAND'] = 'ssh -o BatchMode=yes -o ConnectTimeout=30 -o StrictHostKeyChecking=accept-new'
+
             # Step 1: Clone source as mirror with submodules
             logger.info(f"Cloning mirror from {source_url}")
             source_with_auth = self._inject_auth(source_url, source_token)
@@ -141,11 +187,14 @@ class GitSyncEngine:
                 ["git", "clone", "--mirror", "--recurse-submodules", source_with_auth, str(temp_path)],
                 capture_output=True,
                 text=True,
-                timeout=600
+                timeout=600,
+                env=env
             )
 
             if result.returncode != 0:
-                return False, f"Clone failed: {result.stderr}"
+                error_msg = result.stderr.strip() if result.stderr else "Unknown error"
+                logger.error(f"Clone failed: {error_msg}")
+                return False, f"Clone failed: {error_msg}"
 
             # Step 1.5: Configure git user info for this repository
             logger.info("Configuring git user info")
@@ -189,7 +238,9 @@ class GitSyncEngine:
                 )
 
                 if result.returncode != 0:
-                    return False, f"Set URL failed: {result.stderr}"
+                    error_msg = result.stderr.strip() if result.stderr else "Unknown error"
+                    logger.error(f"Set URL failed: {error_msg}")
+                    return False, f"Set URL failed: {error_msg}"
 
                 # Step 3: Push mirror to destination
                 logger.info(f"Pushing mirror to destination")
@@ -198,16 +249,20 @@ class GitSyncEngine:
                     cwd=temp_path,
                     capture_output=True,
                     text=True,
-                    timeout=600
+                    timeout=600,
+                    env=env
                 )
 
                 if result.returncode != 0:
-                    return False, f"Push failed: {result.stderr}"
+                    error_msg = result.stderr.strip() if result.stderr else "Unknown error"
+                    logger.error(f"Push failed: {error_msg}")
+                    return False, f"Push failed: {error_msg}"
 
                 return True, f"Successfully synced {source_url} to {dest_url}"
 
         except subprocess.TimeoutExpired:
-            return False, "Operation timed out"
+            logger.error("Operation timed out after 600 seconds")
+            return False, "Operation timed out (10 minutes)"
         except Exception as e:
             logger.error(f"Sync error: {str(e)}")
             return False, f"Sync error: {str(e)}"
