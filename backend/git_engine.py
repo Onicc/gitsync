@@ -155,6 +155,7 @@ class GitSyncEngine:
         Returns:
             Tuple[bool, str]: (success, message/error)
         """
+        temp_path = None  # Initialize temp_path to avoid NameError in finally block
         try:
             # Determine authentication tokens
             source_token = auth_token
@@ -322,7 +323,7 @@ class GitSyncEngine:
             return False, f"Sync error: {str(e)}"
         finally:
             # Cleanup temp directory
-            if temp_path.exists():
+            if temp_path is not None and temp_path.exists():
                 shutil.rmtree(temp_path, ignore_errors=True)
 
     def _is_valid_git_mirror(self, path: Path) -> bool:
