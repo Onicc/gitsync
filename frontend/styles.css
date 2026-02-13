@@ -815,6 +815,47 @@ body {
     color: var(--status-failed);
 }
 
+/* Group Header Rows */
+.group-header-row {
+    background: var(--bg-tertiary) !important;
+    border-top: 2px solid var(--border-bright) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.group-header-row:hover {
+    background: var(--bg-tertiary) !important;
+}
+
+.group-header {
+    padding: var(--spacing-md) var(--spacing-md) !important;
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 13px;
+    letter-spacing: 0.02em;
+}
+
+.group-icon {
+    display: inline-block;
+    margin-right: var(--spacing-sm);
+    font-size: 14px;
+    color: var(--accent-cyan);
+}
+
+.group-name {
+    color: var(--text-primary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.group-count {
+    margin-left: var(--spacing-sm);
+    color: var(--text-tertiary);
+    font-size: 11px;
+    font-weight: 500;
+}
+
 /* ============================================
    Task Configuration Form
    ============================================ */

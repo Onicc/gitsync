@@ -110,25 +110,64 @@ function renderSyncTasks(tasks) {
     const tbody = document.querySelector('.backup-table tbody');
     if (!tbody) return;
 
-    tbody.innerHTML = tasks.map(task => `
-        <tr data-task-id="${task.id}">
-            <td class="task-name"><span>${task.name}</span></td>
-            <td class="task-group">${task.group || 'Default'}</td>
-            <td class="repo-cell"><div class="repo-platform ${task.source_platform.toLowerCase()}">${task.source_platform}</div><code>${task.source_url}</code></td>
-            <td class="repo-cell"><div class="repo-platform ${task.dest_platform.toLowerCase()}">${task.dest_platform}</div><code>${task.dest_url}</code></td>
-            <td class="timestamp">${task.last_success ? new Date(task.last_success).toLocaleString() : 'Never'}</td>
-            <td><span class="status-badge ${task.status.toLowerCase()}">${getStatusIcon(task.status)} ${task.status}</span></td>
-            <td class="actions">
-                <button class="action-btn" onclick="syncTask(${task.id})" title="Sync Now">⟳</button>
-                ${task.enabled
-                    ? `<button class="action-btn" onclick="pauseTask(${task.id})" title="Pause">⏸</button>`
-                    : `<button class="action-btn" onclick="resumeTask(${task.id})" title="Resume">▶</button>`
-                }
-                <button class="action-btn" onclick="editTask(${task.id})" title="Configure">⚙</button>
-                <button class="action-btn danger" onclick="deleteTask(${task.id})" title="Delete">✕</button>
-            </td>
-        </tr>
-    `).join('');
+    // Sort tasks by group, then by name
+    const sortedTasks = [...tasks].sort((a, b) => {
+        const groupA = (a.group || 'Default').toLowerCase();
+        const groupB = (b.group || 'Default').toLowerCase();
+
+        // First sort by group
+        if (groupA !== groupB) {
+            return groupA.localeCompare(groupB);
+        }
+
+        // Then sort by name within the same group
+        return a.name.localeCompare(b.name);
+    });
+
+    // Group tasks by their group name for visual organization
+    let currentGroup = null;
+    const rows = [];
+
+    sortedTasks.forEach(task => {
+        const taskGroup = task.group || 'Default';
+
+        // Add group header row if this is a new group
+        if (currentGroup !== taskGroup) {
+            currentGroup = taskGroup;
+            rows.push(`
+                <tr class="group-header-row">
+                    <td colspan="7" class="group-header">
+                        <span class="group-icon">📁</span>
+                        <span class="group-name">${taskGroup}</span>
+                        <span class="group-count">(${sortedTasks.filter(t => (t.group || 'Default') === taskGroup).length} tasks)</span>
+                    </td>
+                </tr>
+            `);
+        }
+
+        // Add task row
+        rows.push(`
+            <tr data-task-id="${task.id}">
+                <td class="task-name"><span>${task.name}</span></td>
+                <td class="task-group">${taskGroup}</td>
+                <td class="repo-cell"><div class="repo-platform ${task.source_platform.toLowerCase()}">${task.source_platform}</div><code>${task.source_url}</code></td>
+                <td class="repo-cell"><div class="repo-platform ${task.dest_platform.toLowerCase()}">${task.dest_platform}</div><code>${task.dest_url}</code></td>
+                <td class="timestamp">${task.last_success ? new Date(task.last_success).toLocaleString() : 'Never'}</td>
+                <td><span class="status-badge ${task.status.toLowerCase()}">${getStatusIcon(task.status)} ${task.status}</span></td>
+                <td class="actions">
+                    <button class="action-btn" onclick="syncTask(${task.id})" title="Sync Now">⟳</button>
+                    ${task.enabled
+                        ? `<button class="action-btn" onclick="pauseTask(${task.id})" title="Pause">⏸</button>`
+                        : `<button class="action-btn" onclick="resumeTask(${task.id})" title="Resume">▶</button>`
+                    }
+                    <button class="action-btn" onclick="editTask(${task.id})" title="Configure">⚙</button>
+                    <button class="action-btn danger" onclick="deleteTask(${task.id})" title="Delete">✕</button>
+                </td>
+            </tr>
+        `);
+    });
+
+    tbody.innerHTML = rows.join('');
 }
 
 function getStatusIcon(status) {
